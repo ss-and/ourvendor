@@ -1,30 +1,73 @@
+"use client";
+
 import Header from "@/components/layout/Header";
-import { Key, Server, Bell, Shield } from "lucide-react";
+import { ChevronDown, Shield, Server } from "lucide-react";
+import { useState } from "react";
 
 export default function SettingsPage() {
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [env, setEnv] = useState<"production" | "sandbox">("production");
+
   return (
     <div className="flex flex-col min-h-full">
       <Header title="設定" breadcrumb={["Salesforce Automation", "設定"]} />
 
       <div className="p-6 max-w-2xl space-y-5">
 
-        {/* Salesforce 接続設定 */}
+        {/* Salesforce ログイン設定 */}
         <div className="card p-5 space-y-4">
           <div className="flex items-center gap-2 mb-1">
             <Server size={18} className="text-primary-500" />
-            <h2 className="font-bold text-neutral-900">Salesforce 接続設定</h2>
+            <h2 className="font-bold text-neutral-900">Salesforce ログイン</h2>
           </div>
 
-          {[
-            { label: "ログインURL", placeholder: "https://login.salesforce.com", type: "url" },
-            { label: "APIバージョン", placeholder: "v59.0", type: "text" },
-            { label: "Consumer Key (Client ID)", placeholder: "3MVG9...", type: "text" },
-          ].map(({ label, placeholder, type }) => (
-            <div key={label}>
-              <label className="block text-xs font-semibold text-neutral-600 mb-1">{label}</label>
-              <input type={type} placeholder={placeholder} className="input" />
+          {/* 環境選択 */}
+          <div>
+            <label className="block text-xs font-semibold text-neutral-600 mb-1">環境</label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setEnv("production")}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-colors ${
+                  env === "production"
+                    ? "bg-primary-500 text-white border-primary-500"
+                    : "bg-white text-neutral-600 border-neutral-200 hover:border-primary-300"
+                }`}
+              >
+                本番
+              </button>
+              <button
+                onClick={() => setEnv("sandbox")}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-colors ${
+                  env === "sandbox"
+                    ? "bg-primary-500 text-white border-primary-500"
+                    : "bg-white text-neutral-600 border-neutral-200 hover:border-primary-300"
+                }`}
+              >
+                サンドボックス
+              </button>
             </div>
-          ))}
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-neutral-600 mb-1">ユーザー名</label>
+            <input type="email" placeholder="admin@yourorg.com" className="input" />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-neutral-600 mb-1">パスワード</label>
+            <input type="password" placeholder="••••••••" className="input" />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-neutral-600 mb-1">
+              セキュリティトークン
+              <span className="text-neutral-400 font-normal ml-1">（APIアクセスに必要）</span>
+            </label>
+            <input type="password" placeholder="abcXYZ123..." className="input" />
+            <p className="text-[11px] text-neutral-400 mt-1.5 leading-relaxed">
+              取得方法: Salesforce 右上アイコン →「設定」→「個人設定」→「私のセキュリティトークンのリセット」→ メールで届いたトークンを貼り付け
+            </p>
+          </div>
 
           <div className="flex items-center gap-3 pt-1">
             <button className="btn-primary">接続テスト</button>
@@ -32,26 +75,38 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* JWT 認証 */}
-        <div className="card p-5 space-y-4">
-          <div className="flex items-center gap-2 mb-1">
-            <Key size={18} className="text-purple-500" />
-            <h2 className="font-bold text-neutral-900">JWT Bearer 認証</h2>
-          </div>
+        {/* 詳細設定（折りたたみ） */}
+        <div className="card overflow-hidden">
+          <button
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="w-full flex items-center justify-between p-5 text-left hover:bg-neutral-50 transition-colors"
+          >
+            <span className="text-sm font-semibold text-neutral-600">詳細設定（Connected App / JWT）</span>
+            <ChevronDown
+              size={16}
+              className={`text-neutral-400 transition-transform duration-200 ${showAdvanced ? "rotate-180" : ""}`}
+            />
+          </button>
 
-          {[
-            { label: "Salesforce ユーザー名", placeholder: "admin@yourorg.com", type: "email" },
-            { label: "秘密鍵パス", placeholder: "./certs/server.key", type: "text" },
-          ].map(({ label, placeholder, type }) => (
-            <div key={label}>
-              <label className="block text-xs font-semibold text-neutral-600 mb-1">{label}</label>
-              <input type={type} placeholder={placeholder} className="input" />
+          {showAdvanced && (
+            <div className="px-5 pb-5 space-y-4 border-t border-neutral-100">
+              <p className="text-xs text-neutral-400 pt-3">
+                Connected App を使った OAuth / JWT 認証が必要な場合に入力してください。
+              </p>
+
+              {[
+                { label: "Consumer Key (Client ID)", placeholder: "3MVG9...", type: "text" },
+                { label: "Consumer Secret", placeholder: "your_consumer_secret", type: "password" },
+                { label: "JWT 秘密鍵パス", placeholder: "./certs/server.key", type: "text" },
+                { label: "APIバージョン", placeholder: "v59.0", type: "text" },
+              ].map(({ label, placeholder, type }) => (
+                <div key={label}>
+                  <label className="block text-xs font-semibold text-neutral-600 mb-1">{label}</label>
+                  <input type={type} placeholder={placeholder} className="input" />
+                </div>
+              ))}
             </div>
-          ))}
-
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
-            <strong>注意:</strong> 秘密鍵ファイルは .gitignore に追加し、本番環境では Secret Manager を使用してください。
-          </div>
+          )}
         </div>
 
         {/* AI 設定 */}
@@ -87,6 +142,7 @@ export default function SettingsPage() {
 
           <button className="btn-primary">設定を保存</button>
         </div>
+
       </div>
     </div>
   );
