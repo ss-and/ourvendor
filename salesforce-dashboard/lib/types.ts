@@ -96,3 +96,29 @@ export interface ConfirmModalState {
   preview: ParsedIntentPreview | null;
   messageId: string;
 }
+
+// ── 業界パック ────────────────────────────────────────────
+
+export type PackItemType = "object" | "field" | "validation" | "permission";
+
+export interface IndustryPackItem {
+  type: PackItemType;
+  name: string;
+  target: string;       // 例: "Property__c", "Account.MRR__c"
+  description: string;
+}
+
+export interface IndustryPack {
+  id: string;
+  name: string;
+  tagline: string;
+  accentBg: string;     // Tailwind bg class
+  accentText: string;   // Tailwind text class
+  stats: {
+    objects: number;
+    fields: number;
+    validations: number;
+    permissions: number;
+  };
+  items: IndustryPackItem[];
+}

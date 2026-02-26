@@ -1,4 +1,4 @@
-import type { ExecutionRecord, OrgStat, OrgHealth, ParsedIntentPreview, Preset } from "./types";
+import type { ExecutionRecord, OrgStat, OrgHealth, ParsedIntentPreview, Preset, IndustryPack } from "./types";
 
 // ── Org 統計情報 ──────────────────────────────────────────
 export const orgStats: OrgStat[] = [
@@ -162,6 +162,254 @@ export const presets: Preset[] = [
     tags: ["Opportunity"],
     usedCount: 44,
     createdAt: new Date("2024-09-18"),
+  },
+];
+
+// ── 業界パック ────────────────────────────────────────────
+export const industryPacks: IndustryPack[] = [
+  {
+    id: "realestate",
+    name: "不動産業界 CRM",
+    tagline: "物件管理・内覧スケジュール・成約フローを一括構築",
+    accentBg: "bg-orange-100",
+    accentText: "text-orange-600",
+    stats: { objects: 2, fields: 4, validations: 1, permissions: 1 },
+    items: [
+      {
+        type: "object",
+        name: "物件 (Property__c)",
+        target: "Property__c",
+        description: "物件情報（タイプ・価格・面積・ステータス）を一元管理するカスタムオブジェクト",
+      },
+      {
+        type: "object",
+        name: "内覧記録 (Viewing__c)",
+        target: "Viewing__c",
+        description: "内覧スケジュール・担当者・結果を記録するカスタムオブジェクト",
+      },
+      {
+        type: "field",
+        name: "物件タイプ (PropertyType__c)",
+        target: "Property__c.PropertyType__c",
+        description: "マンション／一戸建て／土地／収益物件の選択リスト項目",
+      },
+      {
+        type: "field",
+        name: "販売価格 (ListingPrice__c)",
+        target: "Property__c.ListingPrice__c",
+        description: "販売価格を管理する通貨型項目（精度15・小数0）",
+      },
+      {
+        type: "field",
+        name: "専有面積 (FloorArea__c)",
+        target: "Property__c.FloorArea__c",
+        description: "専有面積を管理する数値型項目（精度6・小数2、単位: ㎡）",
+      },
+      {
+        type: "field",
+        name: "販売ステータス (Status__c)",
+        target: "Property__c.Status__c",
+        description: "販売中／内覧済／商談中／成約済／取り下げ の選択リスト",
+      },
+      {
+        type: "validation",
+        name: "成約時価格必須",
+        target: "Property__c",
+        description: "ステータスが「成約済」の場合、販売価格の入力を必須化",
+      },
+      {
+        type: "permission",
+        name: "不動産エージェント権限セット",
+        target: "RealEstate_Agent_PS",
+        description: "物件・内覧記録・取引先の参照／作成／更新権限をセット",
+      },
+    ],
+  },
+  {
+    id: "medical",
+    name: "医療・クリニック CRM",
+    tagline: "患者管理・予約スケジュール・診察記録の業務フローを構築",
+    accentBg: "bg-emerald-100",
+    accentText: "text-emerald-600",
+    stats: { objects: 2, fields: 4, validations: 1, permissions: 1 },
+    items: [
+      {
+        type: "object",
+        name: "患者 (Patient__c)",
+        target: "Patient__c",
+        description: "患者番号・生年月日・保険情報を管理するカスタムオブジェクト",
+      },
+      {
+        type: "object",
+        name: "診察予約 (Appointment__c)",
+        target: "Appointment__c",
+        description: "予約日時・担当医・診察種別・診察結果を管理するカスタムオブジェクト",
+      },
+      {
+        type: "field",
+        name: "患者番号 (PatientNo__c)",
+        target: "Patient__c.PatientNo__c",
+        description: "院内管理用の患者ID（テキスト型・一意性制約あり・外部ID）",
+      },
+      {
+        type: "field",
+        name: "生年月日 (BirthDate__c)",
+        target: "Patient__c.BirthDate__c",
+        description: "患者の生年月日（日付型）。年齢算出の基準値として使用",
+      },
+      {
+        type: "field",
+        name: "診察種別 (AppointmentType__c)",
+        target: "Appointment__c.AppointmentType__c",
+        description: "初診／再診／検査／手術前 の選択リスト項目",
+      },
+      {
+        type: "field",
+        name: "保険証番号 (InsuranceNo__c)",
+        target: "Patient__c.InsuranceNo__c",
+        description: "健康保険証番号（テキスト型・暗号化フィールド）",
+      },
+      {
+        type: "validation",
+        name: "予約日は未来のみ",
+        target: "Appointment__c",
+        description: "予約日時に過去の日時が入力された場合はエラーを返す入力規則",
+      },
+      {
+        type: "permission",
+        name: "受付スタッフ権限セット",
+        target: "Clinic_Reception_PS",
+        description: "患者・予約の参照／作成／更新権限。削除権限は除外",
+      },
+    ],
+  },
+  {
+    id: "manufacturing",
+    name: "製造業 CRM",
+    tagline: "製品管理・発注書・サプライヤー連携に対応した設定を構築",
+    accentBg: "bg-blue-100",
+    accentText: "text-blue-600",
+    stats: { objects: 2, fields: 4, validations: 2, permissions: 1 },
+    items: [
+      {
+        type: "object",
+        name: "製品詳細 (ProductDetail__c)",
+        target: "ProductDetail__c",
+        description: "製品コード・LOT番号・在庫数・製造日を管理するカスタムオブジェクト",
+      },
+      {
+        type: "object",
+        name: "発注書 (PurchaseOrder__c)",
+        target: "PurchaseOrder__c",
+        description: "発注数・発注先・納品予定日・ステータスを管理するカスタムオブジェクト",
+      },
+      {
+        type: "field",
+        name: "製品コード (ProductCode__c)",
+        target: "ProductDetail__c.ProductCode__c",
+        description: "社内管理用の製品識別コード（テキスト型・一意性制約・外部ID）",
+      },
+      {
+        type: "field",
+        name: "LOT番号 (LotNumber__c)",
+        target: "ProductDetail__c.LotNumber__c",
+        description: "製造LOTを追跡するためのテキスト項目（トレーサビリティ対応）",
+      },
+      {
+        type: "field",
+        name: "在庫数量 (StockQuantity__c)",
+        target: "ProductDetail__c.StockQuantity__c",
+        description: "現在庫数を管理する数値型項目（精度10・小数0）",
+      },
+      {
+        type: "field",
+        name: "納品予定日 (DeliveryDate__c)",
+        target: "PurchaseOrder__c.DeliveryDate__c",
+        description: "仕入れ先からの納品予定日（日付型）",
+      },
+      {
+        type: "validation",
+        name: "在庫数は0以上",
+        target: "ProductDetail__c",
+        description: "在庫数量に負の値が入力された場合はエラーを返す入力規則",
+      },
+      {
+        type: "validation",
+        name: "納品日は発注日以降",
+        target: "PurchaseOrder__c",
+        description: "納品予定日が発注日より前の場合はエラーを返す入力規則",
+      },
+      {
+        type: "permission",
+        name: "製造担当者権限セット",
+        target: "Manufacturing_Staff_PS",
+        description: "製品詳細・発注書の参照／作成／更新権限をセット",
+      },
+    ],
+  },
+  {
+    id: "saas",
+    name: "SaaS / IT CRM",
+    tagline: "サブスクリプション管理・MRR追跡・チャーン防止に最適化",
+    accentBg: "bg-violet-100",
+    accentText: "text-violet-600",
+    stats: { objects: 0, fields: 6, validations: 2, permissions: 1 },
+    items: [
+      {
+        type: "field",
+        name: "月次定期収益 (MRR__c)",
+        target: "Account.MRR__c",
+        description: "取引先のMRR（Monthly Recurring Revenue）を管理する通貨型項目",
+      },
+      {
+        type: "field",
+        name: "契約プラン (ContractPlan__c)",
+        target: "Account.ContractPlan__c",
+        description: "Free／Starter／Pro／Enterprise の選択リスト項目",
+      },
+      {
+        type: "field",
+        name: "契約更新日 (RenewalDate__c)",
+        target: "Account.RenewalDate__c",
+        description: "サブスクリプション更新日（日付型）。更新アラートの基準値として使用",
+      },
+      {
+        type: "field",
+        name: "チャーンリスクスコア (ChurnRiskScore__c)",
+        target: "Account.ChurnRiskScore__c",
+        description: "チャーンリスクを0〜100で管理する数値型項目（CSチーム参照用）",
+      },
+      {
+        type: "field",
+        name: "アクティブユーザー数 (ActiveUserCount__c)",
+        target: "Account.ActiveUserCount__c",
+        description: "直近30日のアクティブユーザー数（数値型・整数）",
+      },
+      {
+        type: "field",
+        name: "導入複雑度 (ImplementationComplexity__c)",
+        target: "Opportunity.ImplementationComplexity__c",
+        description: "Low／Medium／High／Enterprise の選択リスト。工数見積もりに使用",
+      },
+      {
+        type: "validation",
+        name: "プラン設定時は更新日必須",
+        target: "Account",
+        description: "ContractPlanが設定されているにもかかわらずRenewalDateが空の場合はエラー",
+      },
+      {
+        type: "validation",
+        name: "MRRは正の値のみ",
+        target: "Account",
+        description: "MRRに負の値が入力された場合はエラーを返す入力規則",
+      },
+      {
+        type: "permission",
+        name: "カスタマーサクセス権限セット",
+        target: "CustomerSuccess_PS",
+        description: "取引先・商談・ケースの参照／更新権限。削除権限は除外",
+      },
+    ],
   },
 ];
 
