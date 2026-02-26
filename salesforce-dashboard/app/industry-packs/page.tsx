@@ -4,7 +4,7 @@ import { useState } from "react";
 import {
   Building2, Heart, Cog, Monitor, Package,
   Database, Columns3, AlertTriangle, Shield,
-  CheckCircle2, Loader2, X, Clock, Zap, Globe,
+  CheckCircle2, Loader2, X, Clock, Zap, Globe, LayoutDashboard,
   ChevronRight, PlayCircle, Landmark, ShoppingBag, GraduationCap, Hammer, Users,
 } from "lucide-react";
 import Header from "@/components/layout/Header";
@@ -43,9 +43,17 @@ const ROADMAP_ITEMS = [
   },
   {
     phase: "Phase 2",
-    title: "会話型フロービルダー",
+    title: "舵手ボード",
     description:
-      "「商談がクローズしたら担当者にタスクを自動作成したい」をチャットで対話しながら、Salesforce Flowを自動生成・デプロイ。複雑なフロービルダーの操作が不要に。",
+      "組織のヘルス状態・カスタムオブジェクト数・権限設定・自動化の実行履歴をリアルタイムで一覧表示。変更の影響をひと目で把握できるダッシュボード。",
+    icon: LayoutDashboard,
+    eta: "2025 Q2",
+  },
+  {
+    phase: "Phase 2",
+    title: "スキル＆フロービルダー",
+    description:
+      "「商談がクローズしたらタスクを自動作成したい」をチャットで対話しながらSalesforce Flowを自動生成・デプロイ。スキルを追加するだけでどんどん機能が拡張できる世界観。",
     icon: Zap,
     eta: "2025 Q2",
   },

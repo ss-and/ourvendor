@@ -1,148 +1,218 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import {
-  Layers, Shield, AlertTriangle, Zap,
-  ArrowRight, MessageSquare,
+  MessageSquare, Package, Bookmark, History,
+  ArrowRight, Plus, Users, Clock, CheckCircle2,
 } from "lucide-react";
 import Header from "@/components/layout/Header";
-import StatsCard from "@/components/dashboard/StatsCard";
-import OrgHealthRing from "@/components/dashboard/OrgHealthRing";
-import RecentActionsTable from "@/components/dashboard/RecentActionsTable";
-import { orgStats, orgHealthMetrics, executionHistory } from "@/lib/mockData";
 
-const statIcons = [
-  <Layers size={20} />,
-  <Shield size={20} />,
-  <AlertTriangle size={20} />,
-  <Zap size={20} />,
+// ── モック組織データ ───────────────────────────────────────
+
+const ORGS = [
+  {
+    id: "prod",
+    name: "本番環境",
+    type: "Production",
+    domain: "mycompany.my.salesforce.com",
+    lastUsed: "2分前",
+    userCount: 42,
+    badge: "本番",
+    badgeColor: "bg-emerald-100 text-emerald-700",
+    dotColor: "bg-emerald-400",
+    ringColor: "ring-emerald-300",
+    borderActive: "border-emerald-400",
+    bgActive: "bg-emerald-50",
+  },
+  {
+    id: "dev",
+    name: "開発サンドボックス",
+    type: "Developer Sandbox",
+    domain: "mycompany--dev.sandbox.my.salesforce.com",
+    lastUsed: "1時間前",
+    userCount: 5,
+    badge: "SB/DEV",
+    badgeColor: "bg-blue-100 text-blue-700",
+    dotColor: "bg-blue-400",
+    ringColor: "ring-blue-300",
+    borderActive: "border-blue-400",
+    bgActive: "bg-blue-50",
+  },
+  {
+    id: "uat",
+    name: "テスト環境 (UAT)",
+    type: "Full Sandbox",
+    domain: "mycompany--uat.sandbox.my.salesforce.com",
+    lastUsed: "昨日",
+    userCount: 12,
+    badge: "UAT",
+    badgeColor: "bg-violet-100 text-violet-700",
+    dotColor: "bg-violet-400",
+    ringColor: "ring-violet-300",
+    borderActive: "border-violet-400",
+    bgActive: "bg-violet-50",
+  },
 ];
-const statColors = ["teal", "blue", "purple", "orange"] as const;
 
-export default function DashboardPage() {
+const FEATURES = [
+  {
+    href: "/chat",
+    icon: MessageSquare,
+    label: "チャット自動化",
+    desc: "日本語でSalesforceを設定変更",
+    badge: "NEW",
+  },
+  {
+    href: "/industry-packs",
+    icon: Package,
+    label: "業界パック",
+    desc: "業界別CRM設定を一括展開",
+    badge: "NEW",
+  },
+  {
+    href: "/presets",
+    icon: Bookmark,
+    label: "プリセット管理",
+    desc: "よく使う設定をテンプレート化",
+    badge: undefined,
+  },
+  {
+    href: "/history",
+    icon: History,
+    label: "実行履歴",
+    desc: "操作ログを確認・追跡",
+    badge: undefined,
+  },
+];
+
+// ── メインページ ──────────────────────────────────────────
+
+export default function HomePage() {
+  const [selectedOrgId, setSelectedOrgId] = useState<string>("prod");
+  const selectedOrg = ORGS.find((o) => o.id === selectedOrgId)!;
+
   return (
     <div className="flex flex-col min-h-full">
-      <Header
-        title="ダッシュボード"
-        breadcrumb={["Salesforce Automation"]}
-        actions={
-          <Link href="/chat" className="btn-primary">
-            <MessageSquare size={15} />
-            チャットで自動化
-          </Link>
-        }
-      />
+      <Header title="ホーム" breadcrumb={["Salesforce Automation"]} />
 
-      <div className="flex-1 p-6 space-y-6">
+      <div className="flex-1 p-6 max-w-3xl mx-auto w-full space-y-8">
 
-        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            ① 統計カード
-           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-          {orgStats.map((stat, i) => (
-            <StatsCard
-              key={stat.label}
-              {...stat}
-              icon={statIcons[i]}
-              color={statColors[i]}
-            />
-          ))}
+        {/* ━━━ ① ウェルカム ━━━ */}
+        <div>
+          <h1 className="text-xl font-bold text-neutral-900">
+            田中 太郎 さん、こんにちは。
+          </h1>
+          <p className="text-sm text-neutral-500 mt-1">
+            どの Salesforce 組織で作業しますか？
+          </p>
         </div>
 
-        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            ② Org ヘルス + クイックアクション (2カラム)
-           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* ━━━ ② 組織セレクター ━━━ */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {ORGS.map((org) => {
+            const isSelected = selectedOrgId === org.id;
+            return (
+              <button
+                key={org.id}
+                onClick={() => setSelectedOrgId(org.id)}
+                className={`card p-4 text-left transition-all duration-150 ${
+                  isSelected
+                    ? `${org.borderActive} ${org.bgActive} shadow-md ring-1 ${org.ringColor}`
+                    : "hover:border-neutral-300 hover:shadow-sm"
+                }`}
+              >
+                {/* 上段: ドット＋名前＋バッジ */}
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 mt-0.5 ${org.dotColor}`} />
+                    <p className="font-semibold text-neutral-900 text-sm leading-tight">
+                      {org.name}
+                    </p>
+                  </div>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${org.badgeColor}`}>
+                    {org.badge}
+                  </span>
+                </div>
 
-          {/* Org ヘルス */}
-          <div className="lg:col-span-2 card p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="font-bold text-neutral-900">Org ヘルス</h2>
-                <p className="text-xs text-neutral-500 mt-0.5">組織の使用状況をモニタリング</p>
+                {/* ドメイン */}
+                <p className="text-xs text-neutral-400 truncate ml-4">{org.domain}</p>
+
+                {/* メタ情報 */}
+                <div className="flex items-center gap-3 mt-2.5 ml-4">
+                  <span className="flex items-center gap-1 text-xs text-neutral-400">
+                    <Clock size={11} />
+                    {org.lastUsed}
+                  </span>
+                  <span className="flex items-center gap-1 text-xs text-neutral-400">
+                    <Users size={11} />
+                    {org.userCount} 名
+                  </span>
+                </div>
+
+                {/* 選択インジケーター */}
+                {isSelected && (
+                  <div className="flex items-center gap-1 mt-2.5 ml-4 text-xs font-semibold text-emerald-600">
+                    <CheckCircle2 size={12} />
+                    選択中
+                  </div>
+                )}
+              </button>
+            );
+          })}
+
+          {/* 新しい組織を接続（Phase 1 予定） */}
+          <div className="card p-4 border-dashed opacity-55 select-none">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-xl bg-neutral-100 flex items-center justify-center flex-shrink-0">
+                <Plus size={17} className="text-neutral-400" />
               </div>
-              <span className="text-xs text-neutral-400">最終更新: 2分前</span>
+              <div>
+                <p className="font-semibold text-neutral-500 text-sm">新しい組織を接続</p>
+                <p className="text-xs text-neutral-400">Salesforce OAuth で認証</p>
+              </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-              {orgHealthMetrics.map((metric) => (
-                <OrgHealthRing key={metric.label} {...metric} />
-              ))}
-            </div>
-          </div>
-
-          {/* クイックアクション */}
-          <div className="card p-5">
-            <h2 className="font-bold text-neutral-900 mb-1">クイックアクション</h2>
-            <p className="text-xs text-neutral-500 mb-4">よく使う操作をワンクリックで</p>
-
-            <div className="space-y-2">
-              {[
-                { label: "カスタム項目を追加",   desc: "オブジェクトに新規項目",    href: "/chat?q=項目を追加したい" },
-                { label: "権限セットを更新",     desc: "アクセス権限を変更",        href: "/chat?q=権限セットを更新" },
-                { label: "入力規則を作成",       desc: "バリデーションルール設定",   href: "/chat?q=入力規則を作成" },
-                { label: "オブジェクトを参照",   desc: "フィールド一覧を確認",      href: "/chat?q=オブジェクトを確認" },
-              ].map((action) => (
-                <Link
-                  key={action.label}
-                  href={action.href}
-                  className="flex items-center gap-3 p-3 rounded-xl border border-neutral-200 hover:border-primary-400 hover:bg-primary-50 transition-all group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center flex-shrink-0 group-hover:bg-primary-500 group-hover:text-white transition-colors">
-                    <MessageSquare size={14} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-neutral-800">{action.label}</p>
-                    <p className="text-xs text-neutral-500">{action.desc}</p>
-                  </div>
-                  <ArrowRight size={14} className="text-neutral-300 group-hover:text-primary-500 transition-colors flex-shrink-0" />
-                </Link>
-              ))}
-            </div>
+            <span className="text-[10px] font-bold bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
+              Phase 1 実装予定
+            </span>
           </div>
         </div>
 
-        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            ③ 最近の実行履歴
-           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        <div className="card">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100">
-            <div>
-              <h2 className="font-bold text-neutral-900">最近の自動化実行</h2>
-              <p className="text-xs text-neutral-500 mt-0.5">
-                直近 {executionHistory.length} 件の操作ログ
-              </p>
-            </div>
-            <Link href="/history" className="btn-ghost text-xs">
-              すべて表示 <ArrowRight size={12} />
-            </Link>
-          </div>
-          <RecentActionsTable records={executionHistory.slice(0, 5)} />
+        {/* ━━━ ③ セパレーター ━━━ */}
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px bg-neutral-200" />
+          <span className="text-xs text-neutral-500 flex items-center gap-1.5 whitespace-nowrap">
+            <span className={`inline-block w-1.5 h-1.5 rounded-full ${selectedOrg.dotColor}`} />
+            {selectedOrg.name} で作業中
+          </span>
+          <div className="flex-1 h-px bg-neutral-200" />
         </div>
 
-        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            ④ バナー: チャットUI への誘導
-           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary-600 to-primary-400 p-6 text-white">
-          {/* Decorative circles */}
-          <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/10 rounded-full" />
-          <div className="absolute -right-4 -bottom-8 w-32 h-32 bg-white/10 rounded-full" />
-
-          <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
-              <MessageSquare size={24} />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-bold">AIチャットで直感的に操作</h3>
-              <p className="text-primary-100 text-sm mt-1">
-                「AccountにCustomer_Score数値項目を追加して」と日本語で入力するだけ。
-                AIが自動でSalesforceの設定を変更します。
-              </p>
-            </div>
+        {/* ━━━ ④ 機能ショートカット ━━━ */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {FEATURES.map(({ href, icon: Icon, label, desc, badge }) => (
             <Link
-              href="/chat"
-              className="flex-shrink-0 bg-white text-primary-700 font-bold px-5 py-2.5 rounded-xl hover:bg-primary-50 transition-colors text-sm shadow-md"
+              key={href}
+              href={href}
+              className="flex items-center gap-3 p-4 card hover:border-primary-300 hover:bg-primary-50 hover:shadow-md transition-all group"
             >
-              今すぐ試す →
+              <div className="w-10 h-10 rounded-xl bg-primary-100 text-primary-600 flex items-center justify-center flex-shrink-0 group-hover:bg-primary-500 group-hover:text-white transition-colors">
+                <Icon size={18} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-neutral-800 text-sm">{label}</p>
+                  {badge && (
+                    <span className="text-[9px] font-bold bg-primary-500 text-white px-1.5 py-0.5 rounded-full">
+                      {badge}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-neutral-500 mt-0.5">{desc}</p>
+              </div>
+              <ArrowRight size={14} className="text-neutral-300 group-hover:text-primary-500 transition-colors flex-shrink-0" />
             </Link>
-          </div>
+          ))}
         </div>
 
       </div>
