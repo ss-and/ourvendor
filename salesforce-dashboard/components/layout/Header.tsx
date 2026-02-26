@@ -1,6 +1,7 @@
 "use client";
 
 import { Bell, Search, RefreshCw, ChevronRight } from "lucide-react";
+import Tooltip from "@/components/ui/Tooltip";
 
 interface HeaderProps {
   title: string;
@@ -36,20 +37,21 @@ export default function Header({ title, breadcrumb, actions }: HeaderProps) {
       {/* ── アクション ───────────────────────────────────── */}
       <div className="flex items-center gap-2">
         {/* 同期ボタン */}
-        <button
-          title="Orgと同期"
-          className="p-2 rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800 transition-colors"
-        >
-          <RefreshCw size={17} />
-        </button>
+        <Tooltip text="Salesforce Orgの情報を最新状態に更新" position="bottom">
+          <button className="p-2 rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800 transition-colors">
+            <RefreshCw size={17} />
+          </button>
+        </Tooltip>
 
         {/* 通知ベル */}
-        <button className="relative p-2 rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800 transition-colors">
-          <Bell size={17} />
-          <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full text-white text-[9px] font-bold flex items-center justify-center">
-            3
-          </span>
-        </button>
+        <Tooltip text="通知を確認（3件の未読）" position="bottom">
+          <button className="relative p-2 rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800 transition-colors">
+            <Bell size={17} />
+            <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full text-white text-[9px] font-bold flex items-center justify-center">
+              3
+            </span>
+          </button>
+        </Tooltip>
 
         {/* カスタムアクション (ページ毎) */}
         {actions}

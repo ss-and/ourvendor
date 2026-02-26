@@ -6,6 +6,7 @@ import {
   LayoutDashboard, MessageSquare, History, Settings,
   Layers, Shield, Zap, HelpCircle, LogOut, ChevronRight,
 } from "lucide-react";
+import Tooltip from "@/components/ui/Tooltip";
 import { clsx } from "clsx";
 
 // ── ナビゲーション定義 ────────────────────────────────────
@@ -102,10 +103,15 @@ export default function Sidebar() {
 
       {/* ── ボトムユーザー情報 ─────────────────────────────── */}
       <div className="px-3 py-4 border-t border-sidebar-border space-y-1">
-        <button className="flex items-center gap-3 px-3 py-2 rounded-lg w-full text-neutral-400 hover:bg-sidebar-hover hover:text-white transition-all duration-150">
-          <HelpCircle size={17} />
+        <Link
+          href="/help"
+          className={`flex items-center gap-3 px-3 py-2 rounded-lg w-full text-neutral-400 hover:bg-sidebar-hover hover:text-white transition-all duration-150 ${
+            pathname === "/help" ? "bg-sidebar-active text-white border-l-2 border-primary-500 pl-[10px]" : ""
+          }`}
+        >
+          <HelpCircle size={17} className={pathname === "/help" ? "text-primary-400" : ""} />
           <span className="text-sm">ヘルプ</span>
-        </button>
+        </Link>
 
         {/* User avatar row */}
         <div className="flex items-center gap-3 px-3 py-2.5 mt-1 rounded-lg bg-sidebar-active">
