@@ -1,59 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import {
   MessageSquare, Package, Bookmark, History,
   ArrowRight, Plus, Users, Clock, CheckCircle2,
 } from "lucide-react";
 import Header from "@/components/layout/Header";
+import { useOrg } from "@/contexts/OrgContext";
+import { ORGS } from "@/lib/orgs";
 
-// ── モック組織データ ───────────────────────────────────────
-
-const ORGS = [
-  {
-    id: "prod",
-    name: "本番環境",
-    type: "Production",
-    domain: "mycompany.my.salesforce.com",
-    lastUsed: "2分前",
-    userCount: 42,
-    badge: "本番",
-    badgeColor: "bg-emerald-100 text-emerald-700",
-    dotColor: "bg-emerald-400",
-    ringColor: "ring-emerald-300",
-    borderActive: "border-emerald-400",
-    bgActive: "bg-emerald-50",
-  },
-  {
-    id: "dev",
-    name: "開発サンドボックス",
-    type: "Developer Sandbox",
-    domain: "mycompany--dev.sandbox.my.salesforce.com",
-    lastUsed: "1時間前",
-    userCount: 5,
-    badge: "SB/DEV",
-    badgeColor: "bg-blue-100 text-blue-700",
-    dotColor: "bg-blue-400",
-    ringColor: "ring-blue-300",
-    borderActive: "border-blue-400",
-    bgActive: "bg-blue-50",
-  },
-  {
-    id: "uat",
-    name: "テスト環境 (UAT)",
-    type: "Full Sandbox",
-    domain: "mycompany--uat.sandbox.my.salesforce.com",
-    lastUsed: "昨日",
-    userCount: 12,
-    badge: "UAT",
-    badgeColor: "bg-violet-100 text-violet-700",
-    dotColor: "bg-violet-400",
-    ringColor: "ring-violet-300",
-    borderActive: "border-violet-400",
-    bgActive: "bg-violet-50",
-  },
-];
+// ── 利用可能な機能 ──────────────────────────────────────
 
 const FEATURES = [
   {
@@ -89,8 +45,7 @@ const FEATURES = [
 // ── メインページ ──────────────────────────────────────────
 
 export default function HomePage() {
-  const [selectedOrgId, setSelectedOrgId] = useState<string>("prod");
-  const selectedOrg = ORGS.find((o) => o.id === selectedOrgId)!;
+  const { selectedOrg, selectOrg } = useOrg();
 
   return (
     <div className="flex flex-col min-h-full">
@@ -111,11 +66,11 @@ export default function HomePage() {
         {/* ━━━ ② 組織セレクター ━━━ */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {ORGS.map((org) => {
-            const isSelected = selectedOrgId === org.id;
+            const isSelected = selectedOrg.id === org.id;
             return (
               <button
                 key={org.id}
-                onClick={() => setSelectedOrgId(org.id)}
+                onClick={() => selectOrg(org.id)}
                 className={`card p-4 text-left transition-all duration-150 ${
                   isSelected
                     ? `${org.borderActive} ${org.bgActive} shadow-md ring-1 ${org.ringColor}`
@@ -152,7 +107,7 @@ export default function HomePage() {
 
                 {/* 選択インジケーター */}
                 {isSelected && (
-                  <div className="flex items-center gap-1 mt-2.5 ml-4 text-xs font-semibold text-emerald-600">
+                  <div className={`flex items-center gap-1 mt-2.5 ml-4 text-xs font-semibold ${org.textActive}`}>
                     <CheckCircle2 size={12} />
                     選択中
                   </div>

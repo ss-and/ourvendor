@@ -1,7 +1,9 @@
 "use client";
 
 import { Bell, Search, RefreshCw, ChevronRight } from "lucide-react";
+import Link from "next/link";
 import Tooltip from "@/components/ui/Tooltip";
+import { useOrg } from "@/contexts/OrgContext";
 
 interface HeaderProps {
   title: string;
@@ -10,6 +12,8 @@ interface HeaderProps {
 }
 
 export default function Header({ title, breadcrumb, actions }: HeaderProps) {
+  const { selectedOrg } = useOrg();
+
   return (
     <header className="sticky top-0 z-20 bg-white border-b border-neutral-200 px-6 py-3.5 flex items-center gap-4">
 
@@ -28,8 +32,24 @@ export default function Header({ title, breadcrumb, actions }: HeaderProps) {
         <h1 className="text-base font-bold text-neutral-900 truncate">{title}</h1>
       </div>
 
+      {/* ── 接続中の組織ピル ────────────────────────────── */}
+      <Tooltip text="ホームで組織を切り替えられます" position="bottom">
+        <Link
+          href="/"
+          className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border border-neutral-200 bg-neutral-50 hover:border-primary-300 hover:bg-primary-50 transition-all cursor-pointer group"
+        >
+          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${selectedOrg.dotColor}`} />
+          <span className="text-xs font-semibold text-neutral-700 group-hover:text-primary-700 whitespace-nowrap">
+            {selectedOrg.name}
+          </span>
+          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${selectedOrg.badgeColor}`}>
+            {selectedOrg.badge}
+          </span>
+        </Link>
+      </Tooltip>
+
       {/* ── サーチバー ──────────────────────────────────── */}
-      <div className="hidden md:flex items-center gap-2 bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 w-64 text-sm text-neutral-400 hover:border-primary-400 transition-colors cursor-text">
+      <div className="hidden md:flex items-center gap-2 bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 w-56 text-sm text-neutral-400 hover:border-primary-400 transition-colors cursor-text">
         <Search size={15} />
         <span>オブジェクト・項目を検索...</span>
       </div>
