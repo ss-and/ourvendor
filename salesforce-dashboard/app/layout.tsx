@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Sidebar from "@/components/layout/Sidebar";
+import DemoBanner from "@/components/layout/DemoBanner";
+import FeedbackButton from "@/components/layout/FeedbackButton";
 
 export const metadata: Metadata = {
   title: "Salesforce Automation Dashboard",
@@ -11,6 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ja">
       <body className="bg-surface-bg">
+        <DemoBanner />
         <div className="flex h-screen overflow-hidden">
           {/* サイドバー (固定, 幅240px) */}
           <Sidebar />
@@ -22,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </main>
         </div>
+        <FeedbackButton />
       </body>
     </html>
   );
