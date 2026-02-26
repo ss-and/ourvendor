@@ -5,7 +5,7 @@ import {
   Building2, Heart, Cog, Monitor, Package,
   Database, Columns3, AlertTriangle, Shield,
   CheckCircle2, Loader2, X, Clock, Zap, Globe,
-  ChevronRight, PlayCircle,
+  ChevronRight, PlayCircle, Landmark, ShoppingBag, GraduationCap, Hammer, Users,
 } from "lucide-react";
 import Header from "@/components/layout/Header";
 import { industryPacks } from "@/lib/mockData";
@@ -18,6 +18,11 @@ const INDUSTRY_ICONS: Record<string, React.ElementType> = {
   medical:       Heart,
   manufacturing: Cog,
   saas:          Monitor,
+  finance:       Landmark,
+  retail:        ShoppingBag,
+  education:     GraduationCap,
+  construction:  Hammer,
+  recruitment:   Users,
 };
 
 const TYPE_CONFIG: Record<PackItemType, { label: string; color: string; icon: React.ElementType }> = {
@@ -29,20 +34,20 @@ const TYPE_CONFIG: Record<PackItemType, { label: string; color: string; icon: Re
 
 const ROADMAP_ITEMS = [
   {
+    phase: "Phase 1",
+    title: "実Salesforce接続",
+    description:
+      "メタデータAPIで実際の組織に接続・デプロイ。業界パックや個別操作の変更を直接反映します。DRYRUNモードで事前確認も可能。すべての機能の土台となる最優先実装。",
+    icon: Globe,
+    eta: "2025 Q1",
+  },
+  {
     phase: "Phase 2",
     title: "会話型フロービルダー",
     description:
       "「商談がクローズしたら担当者にタスクを自動作成したい」をチャットで対話しながら、Salesforce Flowを自動生成・デプロイ。複雑なフロービルダーの操作が不要に。",
     icon: Zap,
     eta: "2025 Q2",
-  },
-  {
-    phase: "Phase 3",
-    title: "実Salesforce接続",
-    description:
-      "設定した組織に直接デプロイ。メタデータAPIを通じて業界パックや個別操作の変更を実際の組織に反映します。DRYRUNモードで事前確認も可能。",
-    icon: Globe,
-    eta: "2025 Q3",
   },
 ];
 
