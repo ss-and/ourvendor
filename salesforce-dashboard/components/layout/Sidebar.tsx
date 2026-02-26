@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, MessageSquare, History, Settings,
-  Layers, Shield, Zap, HelpCircle, LogOut, ChevronRight,
+  Layers, Shield, Zap, HelpCircle, LogOut, ChevronRight, Bookmark,
 } from "lucide-react";
 import Tooltip from "@/components/ui/Tooltip";
 import { clsx } from "clsx";
@@ -14,6 +14,7 @@ import { clsx } from "clsx";
 const mainNav = [
   { href: "/",        icon: LayoutDashboard, label: "ダッシュボード" },
   { href: "/chat",    icon: MessageSquare,   label: "チャット自動化", badge: "NEW" },
+  { href: "/presets", icon: Bookmark,        label: "プリセット管理" },
   { href: "/history", icon: History,         label: "実行履歴" },
 ];
 

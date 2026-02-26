@@ -1,4 +1,4 @@
-import type { ExecutionRecord, OrgStat, OrgHealth, ParsedIntentPreview } from "./types";
+import type { ExecutionRecord, OrgStat, OrgHealth, ParsedIntentPreview, Preset } from "./types";
 
 // ── Org 統計情報 ──────────────────────────────────────────
 export const orgStats: OrgStat[] = [
@@ -77,6 +77,91 @@ export const executionHistory: ExecutionRecord[] = [
     user: "佐藤 花子",
     executedAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
     details: "DRY RUN: 実際の変更は行われていません",
+  },
+];
+
+// ── プリセット ────────────────────────────────────────────
+export const presets: Preset[] = [
+  {
+    id: "preset-001",
+    title: "数値カスタム項目を追加",
+    prompt: "AccountにCustomer_Score__c数値項目（精度5・小数0・必須なし）を追加して",
+    category: "field",
+    tags: ["Account", "Number"],
+    usedCount: 42,
+    createdAt: new Date("2024-10-01"),
+  },
+  {
+    id: "preset-002",
+    title: "日付項目を追加",
+    prompt: "OpportunityにContract_Start_Date__c日付項目を追加して",
+    category: "field",
+    tags: ["Opportunity", "Date"],
+    usedCount: 28,
+    createdAt: new Date("2024-10-15"),
+  },
+  {
+    id: "preset-003",
+    title: "テキスト項目を追加",
+    prompt: "ContactにNickname__cテキスト項目（文字数255）を追加して",
+    category: "field",
+    tags: ["Contact", "Text"],
+    usedCount: 17,
+    createdAt: new Date("2024-11-02"),
+  },
+  {
+    id: "preset-004",
+    title: "Sales_Rep 権限セットに Lead 権限を付与",
+    prompt: "Sales_Rep権限セットでLeadの作成・参照・更新権限を付与して",
+    category: "permission",
+    tags: ["Sales_Rep", "Lead"],
+    usedCount: 35,
+    createdAt: new Date("2024-09-20"),
+  },
+  {
+    id: "preset-005",
+    title: "Manager 権限セットに Account 編集権限を付与",
+    prompt: "Manager権限セットでAccountの参照・作成・更新権限を付与して",
+    category: "permission",
+    tags: ["Manager", "Account"],
+    usedCount: 19,
+    createdAt: new Date("2024-10-10"),
+  },
+  {
+    id: "preset-006",
+    title: "商談クローズ日の必須入力規則を作成",
+    prompt: "商談のクローズ日が空のままステージを「Closed Won」にできない入力規則を作成して",
+    category: "validation",
+    tags: ["Opportunity", "CloseDate"],
+    usedCount: 23,
+    createdAt: new Date("2024-10-25"),
+  },
+  {
+    id: "preset-007",
+    title: "電話番号の必須入力規則を作成",
+    prompt: "ContactのPhoneが空白のままレコードを保存できない入力規則を作成して",
+    category: "validation",
+    tags: ["Contact", "Phone"],
+    usedCount: 11,
+    createdAt: new Date("2024-11-05"),
+  },
+  {
+    id: "preset-008",
+    title: "Account フィールド一覧を確認",
+    prompt: "Accountオブジェクトのカスタム項目一覧を見せて",
+    category: "describe",
+    tags: ["Account"],
+    usedCount: 58,
+    createdAt: new Date("2024-09-15"),
+  },
+  {
+    id: "preset-009",
+    title: "Opportunity フィールド一覧を確認",
+    prompt: "Opportunityオブジェクトの項目一覧を見せて",
+    category: "describe",
+    tags: ["Opportunity"],
+    usedCount: 44,
+    createdAt: new Date("2024-09-18"),
   },
 ];
 
