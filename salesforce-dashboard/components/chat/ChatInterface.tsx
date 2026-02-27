@@ -2,11 +2,14 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Send, Zap, RotateCcw, Copy, CheckCircle, XCircle, Lightbulb, History, ArrowRight } from "lucide-react";
+import {
+  Send, Zap, RotateCcw, CheckCircle, XCircle,
+  Lightbulb, History, ArrowRight, AlertTriangle,
+} from "lucide-react";
 import { clsx } from "clsx";
 import IntentPreviewCard from "./IntentPreviewCard";
 import ConfirmModal from "./ConfirmModal";
-import { simulateIntentParse, quickExamples } from "@/lib/mockData";
+import { quickExamples } from "@/lib/mockData";
 import type { ChatMessage, ConfirmModalState, ParsedIntentPreview } from "@/lib/types";
 
 let _msgId = 0;
@@ -18,7 +21,7 @@ const WELCOME: ChatMessage = {
   id: "welcome",
   role: "assistant",
   type: "text",
-  text: "こんにちは！Salesforce Automation AIです 👋\n\n自然言語で指示するだけで、Salesforceの設定変更を自動で実行します。\n\n例えば「AccountにCustomer_Score__c数値項目を追加して」のように日本語で話しかけてください。",
+  text: "こんにちは！Salesforce Automation AIです\n\n自然言語で指示するだけで、Salesforceの設定変更を自動で実行します。\n\n例えば「AccountにCustomer_Score__c数値項目を追加して」のように日本語で話しかけてください。",
   timestamp: new Date(),
 };
 
@@ -72,6 +75,14 @@ function Message({ msg, onConfirm, onCancel, executedIds }: MessageProps) {
           <div className="chat-bubble-ai whitespace-pre-wrap">{msg.text}</div>
         )}
 
+        {/* エラー */}
+        {msg.type === "error" && (
+          <div className="chat-bubble-ai flex items-start gap-2 border-l-4 border-amber-400 bg-amber-50">
+            <AlertTriangle size={15} className="text-amber-500 mt-0.5 flex-shrink-0" />
+            <span className="text-sm text-amber-800">{msg.text}</span>
+          </div>
+        )}
+
         {/* Intent プレビューカード */}
         {msg.type === "intent_preview" && msg.intentPreview && (
           <IntentPreviewCard
@@ -87,14 +98,22 @@ function Message({ msg, onConfirm, onCancel, executedIds }: MessageProps) {
           <div className="flex flex-col gap-1.5">
             <div className={clsx(
               "chat-bubble-ai flex items-start gap-2",
-              msg.status === "success" ? "border-l-4 border-emerald-400" :
-              msg.status === "failed"  ? "border-l-4 border-red-400" : ""
+              msg.status === "success"  ? "border-l-4 border-emerald-400" :
+              msg.status === "dry_run"  ? "border-l-4 border-sky-400 bg-sky-50" :
+              msg.status === "failed"   ? "border-l-4 border-red-400" : ""
             )}>
-              {msg.status === "success"
-                ? <CheckCircle size={16} className="text-emerald-500 mt-0.5 flex-shrink-0" />
-                : <XCircle    size={16} className="text-red-500 mt-0.5 flex-shrink-0" />
-              }
-              <span className="text-sm">{msg.text}</span>
+              {msg.status === "success" && (
+                <CheckCircle size={16} className="text-emerald-500 mt-0.5 flex-shrink-0" />
+              )}
+              {msg.status === "dry_run" && (
+                <span className="text-[10px] font-bold bg-sky-200 text-sky-700 rounded px-1.5 py-0.5 flex-shrink-0 mt-0.5">
+                  DRY RUN
+                </span>
+              )}
+              {msg.status === "failed" && (
+                <XCircle size={16} className="text-red-500 mt-0.5 flex-shrink-0" />
+              )}
+              <span className="text-sm whitespace-pre-wrap">{msg.text}</span>
             </div>
             {msg.status === "success" && (
               <div className="flex items-center gap-3 pl-1">
@@ -125,16 +144,15 @@ function Message({ msg, onConfirm, onCancel, executedIds }: MessageProps) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export default function ChatInterface({ initialQuery = "" }: { initialQuery?: string }) {
-  const [messages, setMessages]       = useState<ChatMessage[]>([WELCOME]);
-  const [input, setInput]             = useState(initialQuery);
-  const [typing, setTyping]           = useState(false);
-  const [executedIds, setExecutedIds] = useState<Set<string>>(new Set());
-  const [modal, setModal]             = useState<ConfirmModalState>({ open: false, preview: null, messageId: "" });
+  const [messages, setMessages]         = useState<ChatMessage[]>([WELCOME]);
+  const [input, setInput]               = useState(initialQuery);
+  const [typing, setTyping]             = useState(false);
+  const [executedIds, setExecutedIds]   = useState<Set<string>>(new Set());
+  const [modal, setModal]               = useState<ConfirmModalState>({ open: false, preview: null, messageId: "" });
   const [modalLoading, setModalLoading] = useState(false);
-  const [copiedId, setCopiedId]       = useState<string | null>(null);
 
-  const bottomRef  = useRef<HTMLDivElement>(null);
-  const inputRef   = useRef<HTMLTextAreaElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef  = useRef<HTMLTextAreaElement>(null);
 
   // 最下部へスクロール
   useEffect(() => {
@@ -144,7 +162,8 @@ export default function ChatInterface({ initialQuery = "" }: { initialQuery?: st
   // 初期クエリがある場合は自動送信
   useEffect(() => {
     if (initialQuery) {
-      setTimeout(() => handleSend(initialQuery), 600);
+      const t = setTimeout(() => handleSend(initialQuery), 600);
+      return () => clearTimeout(t);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -155,7 +174,7 @@ export default function ChatInterface({ initialQuery = "" }: { initialQuery?: st
     const instruction = (text ?? input).trim();
     if (!instruction) return;
 
-    // User message
+    // User message を追加
     const userMsg: ChatMessage = {
       id: newId(), role: "user", type: "text", text: instruction, timestamp: new Date(),
     };
@@ -163,29 +182,65 @@ export default function ChatInterface({ initialQuery = "" }: { initialQuery?: st
     setInput("");
     setTyping(true);
 
-    // Simulate NLP parsing delay (800ms – 1.8s)
-    await new Promise((r) => setTimeout(r, 800 + Math.random() * 1000));
+    try {
+      // ── リアル Claude API 解析 ────────────────────────────
+      const res = await fetch("/api/chat/parse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ instruction }),
+      });
 
-    const { preview } = simulateIntentParse(instruction);
-    setTyping(false);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(err.error ?? `サーバーエラー (${res.status})`);
+      }
 
-    if (preview.action === "UNKNOWN") {
-      // Unknown: return clarification text
-      const unknownMsg: ChatMessage = {
-        id: newId(), role: "assistant", type: "text",
-        text: `申し訳ありません。指示の内容を解析できませんでした。\n\n${preview.warnings[0] ?? "もう少し具体的に教えてください。"}\n\n例: "AccountにCustomer_Score__c数値項目を追加"`,
+      const preview: ParsedIntentPreview = await res.json();
+
+      // instruction を _raw に保存（execute 時に使用）
+      if (preview._raw) {
+        preview._raw.instruction = instruction;
+      } else {
+        (preview as ParsedIntentPreview)._raw = {
+          action: preview.action,
+          confidence: preview.confidence,
+          reasoning: "",
+          parameters: {},
+          instruction,
+        };
+      }
+
+      setTyping(false);
+
+      if (preview.action === "UNKNOWN") {
+        const unknownMsg: ChatMessage = {
+          id: newId(), role: "assistant", type: "text",
+          text: `申し訳ありません。指示の内容を解析できませんでした。\n\n${
+            preview.warnings[0] ?? "もう少し具体的に教えてください。"
+          }\n\n例: "AccountにCustomer_Score__c数値項目を追加"`,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, unknownMsg]);
+        return;
+      }
+
+      // Intent プレビューカードを表示
+      const previewMsg: ChatMessage = {
+        id: newId(), role: "assistant", type: "intent_preview",
+        intentPreview: preview, timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, previewMsg]);
+
+    } catch (err: unknown) {
+      setTyping(false);
+      const message = err instanceof Error ? err.message : "不明なエラー";
+      const errMsg: ChatMessage = {
+        id: newId(), role: "assistant", type: "error",
+        text: `解析中にエラーが発生しました: ${message}`,
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, unknownMsg]);
-      return;
+      setMessages((prev) => [...prev, errMsg]);
     }
-
-    // Show intent preview message
-    const previewMsg: ChatMessage = {
-      id: newId(), role: "assistant", type: "intent_preview",
-      intentPreview: preview, timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, previewMsg]);
   }, [input]);
 
   // ── モーダル確認 ────────────────────────────────────────
@@ -208,40 +263,45 @@ export default function ChatInterface({ initialQuery = "" }: { initialQuery?: st
     if (!modal.preview) return;
     setModalLoading(true);
 
-    // Simulate API call
-    await new Promise((r) => setTimeout(r, 1200 + Math.random() * 800));
-
     const { preview, messageId } = modal;
-    const isSuccess = Math.random() > 0.08; // 92% success rate
+    const instruction = preview._raw?.instruction as string | undefined;
+    const action      = preview._raw?.action ?? preview.action;
+    const parameters  = preview._raw?.parameters ?? {};
 
-    setModal({ open: false, preview: null, messageId: "" });
-    setModalLoading(false);
-    setExecutedIds((prev) => new Set([...prev, messageId]));
+    try {
+      // ── リアル Execute API ───────────────────────────────
+      const res = await fetch("/api/chat/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ instruction, action, parameters }),
+      });
 
-    if (isSuccess) {
-      // Simulate result text from mockData
-      const { successMessage } = simulateIntentParse(
-        messages.find((m) => m.type === "intent_preview" && m.id === messageId)
-          ? (preview.description)
-          : ""
-      );
-      const resultText = successMessage || `✅ ${preview.description}`;
+      const result = await res.json();
+
+      setModal({ open: false, preview: null, messageId: "" });
+      setModalLoading(false);
+      setExecutedIds((prev) => new Set([...prev, messageId]));
 
       const resultMsg: ChatMessage = {
         id: newId(), role: "assistant", type: "result",
-        text: resultText.replace(/\*\*/g, ""),
-        status: "success", timestamp: new Date(),
+        text: result.message ?? (result.success ? `${action} を実行しました` : "実行に失敗しました"),
+        status: result.status ?? (result.success ? "success" : "failed"),
+        timestamp: new Date(),
       };
       setMessages((prev) => [...prev, resultMsg]);
-    } else {
+
+    } catch (err: unknown) {
+      setModal({ open: false, preview: null, messageId: "" });
+      setModalLoading(false);
+      const message = err instanceof Error ? err.message : "不明なエラー";
       const errMsg: ChatMessage = {
         id: newId(), role: "assistant", type: "result",
-        text: "実行に失敗しました。Salesforce の権限設定や接続情報を確認してください。",
+        text: `実行中にエラーが発生しました: ${message}`,
         status: "failed", timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errMsg]);
     }
-  }, [modal, messages]);
+  }, [modal]);
 
   const handleModalCancel = useCallback(() => {
     setModal({ open: false, preview: null, messageId: "" });
@@ -254,14 +314,6 @@ export default function ChatInterface({ initialQuery = "" }: { initialQuery?: st
     setExecutedIds(new Set());
     setInput("");
     inputRef.current?.focus();
-  }, []);
-
-  // ── コピー ──────────────────────────────────────────────
-
-  const handleCopy = useCallback((text: string, id: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
   }, []);
 
   // ── キー入力ハンドラー ──────────────────────────────────
@@ -300,7 +352,7 @@ export default function ChatInterface({ initialQuery = "" }: { initialQuery?: st
         <div ref={bottomRef} />
       </div>
 
-      {/* ── クイック例文 ─────────────────────────────────── */}
+      {/* ── クイック例文（初期状態のみ表示） ─────────────── */}
       {messages.length === 1 && !typing && (
         <div className="px-4 pb-3 animate-fade-in">
           <p className="flex items-center gap-1.5 text-xs text-neutral-400 font-medium mb-2">
@@ -342,7 +394,8 @@ export default function ChatInterface({ initialQuery = "" }: { initialQuery?: st
               onKeyDown={handleKeyDown}
               placeholder="例: AccountにCustomer_Score__c数値項目を追加して（Enterで送信）"
               rows={1}
-              className="w-full px-4 py-3 text-sm bg-transparent resize-none focus:outline-none leading-relaxed max-h-32 overflow-y-auto placeholder:text-neutral-400"
+              disabled={typing}
+              className="w-full px-4 py-3 text-sm bg-transparent resize-none focus:outline-none leading-relaxed max-h-32 overflow-y-auto placeholder:text-neutral-400 disabled:opacity-50"
               style={{ fieldSizing: "content" } as React.CSSProperties}
             />
           </div>

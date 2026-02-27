@@ -2,7 +2,70 @@
 
 **作成日**: 2026-02-27
 **対象リポジトリ**: `/home/user/ourvendor`
-**ステータス**: Phase 2 実装中
+**ステータス**: Phase 2a 完了 → Phase 2b 着手前
+
+---
+
+## クイックロードマップ
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                   Salesforce Automation Dashboard                        │
+│                          開発ロードマップ                                │
+├──────────┬────────────────────────────────────────────────┬─────────────┤
+│ フェーズ │ 内容                                           │ ステータス  │
+├──────────┼────────────────────────────────────────────────┼─────────────┤
+│ Phase 1  │ UI モック + スキル基盤                         │ ✅ 完了     │
+│          │ · Next.js Dashboard UI (全ページ)              │             │
+│          │ · salesforce-automation-skill (NLP+SF API)    │             │
+├──────────┼────────────────────────────────────────────────┼─────────────┤
+│ Phase 2a │ チャット → リアル Claude API 接続              │ ✅ 完了     │
+│          │ · /api/chat/parse  (IntentParser → Claude)    │             │
+│          │ · /api/chat/execute (DRY RUN モード)          │ ← 今ここ！  │
+│          │ · ChatInterface モック完全撤廃                 │             │
+│          │ · .env.example / 環境変数整備                  │             │
+├──────────┼────────────────────────────────────────────────┼─────────────┤
+│ Phase 2b │ 認証 + DB + 履歴永続化                         │ 🔜 次期     │
+│          │ · NextAuth.js (Salesforce OAuth2)             │             │
+│          │ · Supabase (users / orgs / execution_logs)    │             │
+│          │ · /api/orgs CRUD + 接続テスト                  │             │
+│          │ · /history ページのリアルデータ表示            │             │
+├──────────┼────────────────────────────────────────────────┼─────────────┤
+│ Phase 2c │ Salesforce リアル実行                          │ 🔲 未着手   │
+│          │ · /api/chat/execute → MetadataAPI             │             │
+│          │ · FieldManager / PermissionManager 接続       │             │
+│          │ · Upstash QStash 非同期ジョブ化               │             │
+│          │ · レート制限 / 監査ログ永続化                   │             │
+├──────────┼────────────────────────────────────────────────┼─────────────┤
+│ Phase 3  │ 高度機能                                       │ 🔲 未着手   │
+│          │ · 仕様書自動生成 (/spec-generator)             │             │
+│          │ · 業界パック → リアル SF 展開                   │             │
+│          │ · RBAC (admin / developer / viewer)           │             │
+│          │ · マルチテナント SaaS 化                       │             │
+└──────────┴────────────────────────────────────────────────┴─────────────┘
+```
+
+### 直近のネクストアクション (Phase 2b)
+
+```
+優先度 高:
+  □ Supabaseプロジェクト作成 + テーブル定義
+      users, organizations, execution_logs, jobs
+  □ NextAuth.js インストール・設定
+  □ Salesforce OAuth2 カスタムプロバイダー実装
+  □ セッション管理 (トークン暗号化)
+
+優先度 中:
+  □ /api/orgs CRUD 実装
+  □ OrgContext をリアル DB に切り替え
+  □ /history ページのリアルデータ表示
+  □ ConnectOrgModal → リアル OAuth 接続
+
+優先度 低（2b後半）:
+  □ レート制限 (Upstash Redis)
+  □ エラーハンドリング統一
+  □ ロギング整備
+```
 
 ---
 

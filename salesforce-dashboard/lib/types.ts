@@ -58,6 +58,14 @@ export interface ParsedIntentPreview {
   formula?: string;
   description: string;  // 人間向け説明
   warnings: string[];
+  // /api/chat/parse から返される生データ（/api/chat/execute に渡す）
+  _raw?: {
+    action: ActionType;
+    confidence: number;
+    reasoning: string;
+    parameters: Record<string, unknown>;
+    instruction?: string;
+  };
 }
 
 export interface ChatMessage {
