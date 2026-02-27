@@ -4,8 +4,115 @@ import { useState } from "react";
 import Header from "@/components/layout/Header";
 import {
   User, CreditCard, Zap, BarChart3, Crown,
-  Download, Shield, Check, AlertCircle, Sparkles, Key, Lock,
+  Download, Shield, Check, AlertCircle, Sparkles, Key, Lock, X, CheckCircle2, Loader2,
 } from "lucide-react";
+
+// ── クレジットカード登録モーダル ────────────────────────────
+
+function CreditCardModal({ mode, onClose }: { mode: "add" | "update"; onClose: () => void }) {
+  const [cardNum, setCardNum] = useState("");
+  const [expiry, setExpiry] = useState("");
+  const [cvv, setCvv] = useState("");
+  const [name, setName] = useState("");
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "done">("idle");
+
+  const formatCardNum = (v: string) =>
+    v.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim();
+
+  const formatExpiry = (v: string) => {
+    const d = v.replace(/\D/g, "").slice(0, 4);
+    return d.length >= 3 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
+  };
+
+  const handleSave = async () => {
+    if (!cardNum || !expiry || !cvv || !name) return;
+    setSaveState("saving");
+    await new Promise((r) => setTimeout(r, 1100));
+    setSaveState("done");
+    setTimeout(onClose, 1200);
+  };
+
+  if (saveState === "done") {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
+        <div className="w-full max-w-sm bg-white rounded-2xl shadow-modal mx-4 p-8 flex flex-col items-center text-center animate-slide-up">
+          <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mb-3">
+            <CheckCircle2 size={28} className="text-emerald-500" />
+          </div>
+          <h2 className="font-bold text-neutral-900 mb-1">
+            {mode === "add" ? "カードを追加しました" : "カードを更新しました"}
+          </h2>
+          <p className="text-sm text-neutral-400">次回の請求から新しいカードが使用されます</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in"
+      onClick={(e) => { if (e.target === e.currentTarget && saveState === "idle") onClose(); }}>
+      <div className="w-full max-w-sm bg-white rounded-2xl shadow-modal mx-4 animate-slide-up">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+              <CreditCard size={15} className="text-blue-600" />
+            </div>
+            <h2 className="font-bold text-neutral-900 text-sm">
+              {mode === "add" ? "支払い方法を追加" : "カード情報を更新"}
+            </h2>
+          </div>
+          {saveState === "idle" && (
+            <button onClick={onClose} className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100 transition-colors">
+              <X size={16} />
+            </button>
+          )}
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-neutral-600 mb-1">カード番号</label>
+            <input className="input font-mono tracking-widest" placeholder="1234 5678 9012 3456"
+              value={cardNum} onChange={(e) => setCardNum(formatCardNum(e.target.value))} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-neutral-600 mb-1">有効期限 (MM/YY)</label>
+              <input className="input font-mono" placeholder="12/28"
+                value={expiry} onChange={(e) => setExpiry(formatExpiry(e.target.value))} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-neutral-600 mb-1">CVV</label>
+              <input className="input font-mono" placeholder="123" type="password" maxLength={4}
+                value={cvv} onChange={(e) => setCvv(e.target.value.replace(/\D/g, "").slice(0, 4))} />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-neutral-600 mb-1">カード名義</label>
+            <input className="input uppercase" placeholder="TARO TANAKA"
+              value={name} onChange={(e) => setName(e.target.value.toUpperCase())} />
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px] text-neutral-400">
+            <Lock size={11} />
+            カード情報は SSL で暗号化され安全に処理されます
+          </div>
+        </div>
+
+        <div className="px-5 py-4 border-t border-neutral-100 flex justify-end gap-2">
+          <button onClick={onClose} disabled={saveState === "saving"} className="btn-ghost">キャンセル</button>
+          <button
+            onClick={handleSave}
+            disabled={saveState === "saving" || !cardNum || !expiry || !cvv || !name}
+            className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saveState === "saving"
+              ? <><Loader2 size={14} className="animate-spin" />処理中...</>
+              : <><Check size={14} />{mode === "add" ? "追加する" : "更新する"}</>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── 型 ──────────────────────────────────────────────────
 
@@ -37,6 +144,28 @@ const BILLING_HISTORY = [
 // ── サブビュー ────────────────────────────────────────────
 
 function AccountTab() {
+  const [profileSave, setProfileSave] = useState<"idle" | "saving" | "saved">("idle");
+  const [pwSave, setPwSave] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+
+  const saveProfile = async () => {
+    setProfileSave("saving");
+    await new Promise((r) => setTimeout(r, 700));
+    setProfileSave("saved");
+    setTimeout(() => setProfileSave("idle"), 2500);
+  };
+
+  const changePw = async () => {
+    if (!currentPw || newPw.length < 8 || newPw !== confirmPw) { setPwSave("error"); return; }
+    setPwSave("saving");
+    await new Promise((r) => setTimeout(r, 800));
+    setPwSave("saved");
+    setCurrentPw(""); setNewPw(""); setConfirmPw("");
+    setTimeout(() => setPwSave("idle"), 2500);
+  };
+
   return (
     <div className="space-y-6">
       {/* アバター & 名前 */}
@@ -75,9 +204,10 @@ function AccountTab() {
           ))}
         </div>
         <div className="mt-4 flex justify-end">
-          <button className="btn-primary">
-            <Check size={14} />
-            保存する
+          <button onClick={saveProfile} disabled={profileSave === "saving"} className={`btn-primary transition-all ${profileSave === "saved" ? "bg-emerald-500 hover:bg-emerald-600" : ""}`}>
+            {profileSave === "saving" ? <><Loader2 size={14} className="animate-spin" />保存中...</> :
+             profileSave === "saved"  ? <><Check size={14} />保存しました</> :
+                                        <><Check size={14} />保存する</>}
           </button>
         </div>
       </div>
@@ -89,22 +219,40 @@ function AccountTab() {
           <h3 className="font-bold text-neutral-800">セキュリティ</h3>
         </div>
         <div className="space-y-3">
+          {pwSave === "error" && (
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">
+              <X size={12} />
+              パスワードが一致しないか、8文字未満です
+            </div>
+          )}
+          {pwSave === "saved" && (
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-700">
+              <Check size={12} />
+              パスワードを変更しました
+            </div>
+          )}
           <div>
             <label className="block text-xs font-semibold text-neutral-600 mb-1">現在のパスワード</label>
-            <input type="password" placeholder="••••••••" className="input" />
+            <input type="password" placeholder="••••••••" value={currentPw}
+              onChange={(e) => setCurrentPw(e.target.value)} className="input" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-neutral-600 mb-1">新しいパスワード</label>
-              <input type="password" placeholder="••••••••" className="input" />
+              <input type="password" placeholder="8文字以上" value={newPw}
+                onChange={(e) => setNewPw(e.target.value)} className="input" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-neutral-600 mb-1">確認用パスワード</label>
-              <input type="password" placeholder="••••••••" className="input" />
+              <input type="password" placeholder="••••••••" value={confirmPw}
+                onChange={(e) => setConfirmPw(e.target.value)} className="input" />
             </div>
           </div>
           <div className="flex justify-end">
-            <button className="btn-ghost text-sm">パスワードを変更</button>
+            <button onClick={changePw} disabled={pwSave === "saving" || !currentPw}
+              className="btn-ghost text-sm disabled:opacity-50">
+              {pwSave === "saving" ? <><Loader2 size={13} className="animate-spin" />変更中...</> : "パスワードを変更"}
+            </button>
           </div>
         </div>
       </div>
@@ -224,6 +372,29 @@ function PlanTab() {
 }
 
 function BillingTab() {
+  const [ccModal, setCcModal] = useState<{ open: boolean; mode: "add" | "update" }>({ open: false, mode: "add" });
+  const [billingSave, setBillingSave] = useState<"idle" | "saving" | "saved">("idle");
+  const [downloading, setDownloading] = useState<string | null>(null);
+
+  const saveBilling = async () => {
+    setBillingSave("saving");
+    await new Promise((r) => setTimeout(r, 700));
+    setBillingSave("saved");
+    setTimeout(() => setBillingSave("idle"), 2500);
+  };
+
+  const downloadReceipt = async (date: string) => {
+    setDownloading(date);
+    await new Promise((r) => setTimeout(r, 900));
+    setDownloading(null);
+    // Simulate file download via blob
+    const blob = new Blob([`領収書\n日付: ${date}\nMyCompany 株式会社`], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `receipt_${date.replace(/\//g, "-")}.txt`;
+    a.click(); URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
       {/* 支払い方法 */}
@@ -241,9 +412,14 @@ function BillingTab() {
               <p className="text-xs text-neutral-400">有効期限: 2026/12</p>
             </div>
           </div>
-          <button className="btn-ghost text-sm">更新する</button>
+          <button onClick={() => setCcModal({ open: true, mode: "update" })} className="btn-ghost text-sm">
+            更新する
+          </button>
         </div>
-        <button className="mt-3 text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors">
+        <button
+          onClick={() => setCcModal({ open: true, mode: "add" })}
+          className="mt-3 text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors flex items-center gap-1"
+        >
           + 支払い方法を追加
         </button>
       </div>
@@ -265,9 +441,11 @@ function BillingTab() {
           ))}
         </div>
         <div className="mt-4 flex justify-end">
-          <button className="btn-primary">
-            <Check size={14} />
-            保存する
+          <button onClick={saveBilling} disabled={billingSave === "saving"}
+            className={`btn-primary transition-all ${billingSave === "saved" ? "bg-emerald-500 hover:bg-emerald-600" : ""}`}>
+            {billingSave === "saving" ? <><Loader2 size={14} className="animate-spin" />保存中...</> :
+             billingSave === "saved"  ? <><Check size={14} />保存しました</> :
+                                        <><Check size={14} />保存する</>}
           </button>
         </div>
       </div>
@@ -293,8 +471,14 @@ function BillingTab() {
                 <td className="px-6 py-3.5 text-neutral-800 font-medium text-xs">{row.desc}</td>
                 <td className="px-6 py-3.5 text-right font-bold text-neutral-800 text-xs">{row.amount}</td>
                 <td className="px-6 py-3.5 text-right">
-                  <button className="flex items-center gap-1 text-xs text-neutral-400 hover:text-primary-600 transition-colors ml-auto">
-                    <Download size={12} />
+                  <button
+                    onClick={() => downloadReceipt(row.date)}
+                    disabled={downloading === row.date}
+                    className="flex items-center gap-1 text-xs text-neutral-400 hover:text-primary-600 transition-colors ml-auto disabled:opacity-50"
+                  >
+                    {downloading === row.date
+                      ? <Loader2 size={12} className="animate-spin" />
+                      : <Download size={12} />}
                     領収書
                   </button>
                 </td>
@@ -303,6 +487,10 @@ function BillingTab() {
           </tbody>
         </table>
       </div>
+
+      {ccModal.open && (
+        <CreditCardModal mode={ccModal.mode} onClose={() => setCcModal({ open: false, mode: "add" })} />
+      )}
     </div>
   );
 }
@@ -312,6 +500,14 @@ function AITab() {
   const [confidence, setConfidence] = useState(70);
   const [byolEnabled, setByolEnabled] = useState(false);
   const [byolModel, setByolModel] = useState("anthropic");
+  const [aiSave, setAiSave] = useState<"idle" | "saving" | "saved">("idle");
+
+  const saveAiSettings = async () => {
+    setAiSave("saving");
+    await new Promise((r) => setTimeout(r, 700));
+    setAiSave("saved");
+    setTimeout(() => setAiSave("idle"), 2500);
+  };
 
   return (
     <div className="space-y-6">
@@ -484,9 +680,14 @@ function AITab() {
         </div>
 
         <div className="flex justify-end pt-1">
-          <button className="btn-primary">
-            <Check size={14} />
-            設定を保存
+          <button
+            onClick={saveAiSettings}
+            disabled={aiSave === "saving"}
+            className={`btn-primary transition-all ${aiSave === "saved" ? "bg-emerald-500 hover:bg-emerald-600" : ""}`}
+          >
+            {aiSave === "saving" ? <><Loader2 size={14} className="animate-spin" />保存中...</> :
+             aiSave === "saved"  ? <><Check size={14} />保存しました</> :
+                                   <><Check size={14} />設定を保存</>}
           </button>
         </div>
       </div>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Zap, RotateCcw, Copy, CheckCircle, XCircle, Lightbulb } from "lucide-react";
+import Link from "next/link";
+import { Send, Zap, RotateCcw, Copy, CheckCircle, XCircle, Lightbulb, History, ArrowRight } from "lucide-react";
 import { clsx } from "clsx";
 import IntentPreviewCard from "./IntentPreviewCard";
 import ConfirmModal from "./ConfirmModal";
@@ -83,16 +84,30 @@ function Message({ msg, onConfirm, onCancel, executedIds }: MessageProps) {
 
         {/* 実行結果 */}
         {msg.type === "result" && (
-          <div className={clsx(
-            "chat-bubble-ai flex items-start gap-2",
-            msg.status === "success" ? "border-l-4 border-emerald-400" :
-            msg.status === "failed"  ? "border-l-4 border-red-400" : ""
-          )}>
-            {msg.status === "success"
-              ? <CheckCircle size={16} className="text-emerald-500 mt-0.5 flex-shrink-0" />
-              : <XCircle    size={16} className="text-red-500 mt-0.5 flex-shrink-0" />
-            }
-            <span className="text-sm">{msg.text}</span>
+          <div className="flex flex-col gap-1.5">
+            <div className={clsx(
+              "chat-bubble-ai flex items-start gap-2",
+              msg.status === "success" ? "border-l-4 border-emerald-400" :
+              msg.status === "failed"  ? "border-l-4 border-red-400" : ""
+            )}>
+              {msg.status === "success"
+                ? <CheckCircle size={16} className="text-emerald-500 mt-0.5 flex-shrink-0" />
+                : <XCircle    size={16} className="text-red-500 mt-0.5 flex-shrink-0" />
+              }
+              <span className="text-sm">{msg.text}</span>
+            </div>
+            {msg.status === "success" && (
+              <div className="flex items-center gap-3 pl-1">
+                <Link
+                  href="/history"
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-neutral-500 hover:text-primary-600 transition-colors"
+                >
+                  <History size={11} />
+                  実行履歴で確認
+                  <ArrowRight size={10} />
+                </Link>
+              </div>
+            )}
           </div>
         )}
 

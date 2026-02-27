@@ -23,14 +23,59 @@ const FEATURES = [
 
 // ── 新しい組織を接続モーダル ────────────────────────────
 
+type ConnectPhase = "form" | "oauth_loading" | "oauth_done" | "test_loading" | "test_success" | "test_error";
+
 function ConnectOrgModal({ onClose }: { onClose: () => void }) {
   const [env, setEnv] = useState<"production" | "sandbox">("production");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [phase, setPhase] = useState<ConnectPhase>("form");
+  const [displayName, setDisplayName] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleOAuth = async () => {
+    setPhase("oauth_loading");
+    await new Promise((r) => setTimeout(r, 1600));
+    setPhase("oauth_done");
+    setTimeout(onClose, 1400);
+  };
+
+  const handleTest = async () => {
+    if (!username.trim() || !password.trim()) return;
+    setPhase("test_loading");
+    await new Promise((r) => setTimeout(r, 1300));
+    setPhase(Math.random() > 0.15 ? "test_success" : "test_error");
+  };
+
+  const loading = phase === "oauth_loading" || phase === "test_loading";
+
+  // ── 成功画面 ────
+  if (phase === "oauth_done" || phase === "test_success") {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
+        <div className="w-full max-w-sm bg-white rounded-2xl shadow-modal mx-4 p-8 flex flex-col items-center text-center animate-slide-up">
+          <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
+            <CheckCircle2 size={32} className="text-emerald-500" />
+          </div>
+          <h2 className="font-bold text-neutral-900 text-lg mb-1">接続完了！</h2>
+          <p className="text-sm text-neutral-500 mb-2">
+            {phase === "oauth_done" ? "Salesforce OAuth 認証に成功しました" : "接続テストが成功しました"}
+          </p>
+          <p className="text-xs text-neutral-400 mb-6">
+            {displayName || (env === "production" ? "本番環境" : "サンドボックス")} を組織リストに追加しました
+          </p>
+          <button onClick={onClose} className="btn-primary w-full justify-center">
+            閉じる
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => { if (e.target === e.currentTarget && !loading) onClose(); }}
     >
       <div className="w-full max-w-md bg-white rounded-2xl shadow-modal mx-4 flex flex-col max-h-[90vh] animate-slide-up">
         {/* ヘッダ */}
@@ -44,29 +89,43 @@ function ConnectOrgModal({ onClose }: { onClose: () => void }) {
               <p className="text-[11px] text-neutral-400">Salesforce 組織を認証して追加</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 transition-colors"
-          >
-            <X size={16} />
-          </button>
+          {!loading && (
+            <button onClick={onClose} className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 transition-colors">
+              <X size={16} />
+            </button>
+          )}
         </div>
 
         {/* ボディ */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          {/* エラーバナー */}
+          {phase === "test_error" && (
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
+              <X size={13} className="flex-shrink-0" />
+              接続テストに失敗しました。ユーザー名・パスワード・トークンを確認してください。
+            </div>
+          )}
+
           {/* OAuth 推奨バナー */}
           <div className="flex items-start gap-3 p-3.5 rounded-xl bg-primary-50 border border-primary-200">
             <div className="w-6 h-6 rounded-full bg-primary-500 flex items-center justify-center flex-shrink-0 mt-0.5">
               <ExternalLink size={12} className="text-white" />
             </div>
-            <div>
+            <div className="flex-1">
               <p className="text-xs font-semibold text-primary-800">Salesforce OAuth で接続（推奨）</p>
               <p className="text-[11px] text-primary-600 mt-0.5 leading-relaxed">
                 パスワードを入力せずにワンクリックで安全に認証できます。
               </p>
-              <button className="mt-2 flex items-center gap-1.5 text-xs font-bold text-white bg-primary-500 hover:bg-primary-600 px-3 py-1.5 rounded-lg transition-colors">
-                <ExternalLink size={11} />
-                Salesforce でログイン
+              <button
+                onClick={handleOAuth}
+                disabled={loading}
+                className="mt-2 flex items-center gap-1.5 text-xs font-bold text-white bg-primary-500 hover:bg-primary-600 disabled:opacity-60 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                {phase === "oauth_loading" ? (
+                  <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" />接続中...</>
+                ) : (
+                  <><ExternalLink size={11} />Salesforce でログイン</>
+                )}
               </button>
             </div>
           </div>
@@ -85,15 +144,10 @@ function ConnectOrgModal({ onClose }: { onClose: () => void }) {
                 { id: "production" as const, label: "本番 (Production)" },
                 { id: "sandbox"    as const, label: "サンドボックス" },
               ].map(({ id, label }) => (
-                <button
-                  key={id}
-                  onClick={() => setEnv(id)}
+                <button key={id} onClick={() => setEnv(id)} disabled={loading}
                   className={`py-2 rounded-xl text-xs font-semibold border transition-colors ${
-                    env === id
-                      ? "bg-primary-500 text-white border-primary-500"
-                      : "bg-white text-neutral-600 border-neutral-200 hover:border-primary-300"
-                  }`}
-                >
+                    env === id ? "bg-primary-500 text-white border-primary-500" : "bg-white text-neutral-600 border-neutral-200 hover:border-primary-300"
+                  }`}>
                   {label}
                 </button>
               ))}
@@ -103,19 +157,26 @@ function ConnectOrgModal({ onClose }: { onClose: () => void }) {
           {/* 表示名 */}
           <div>
             <label className="block text-xs font-semibold text-neutral-600 mb-1">表示名</label>
-            <input type="text" placeholder="例: 本番環境、営業SB..." className="input" />
+            <input type="text" placeholder="例: 本番環境、営業SB..." value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)} disabled={loading} className="input" />
           </div>
 
           {/* ユーザー名 */}
           <div>
-            <label className="block text-xs font-semibold text-neutral-600 mb-1">ユーザー名</label>
-            <input type="email" placeholder="admin@yourorg.com" className="input" />
+            <label className="block text-xs font-semibold text-neutral-600 mb-1">
+              ユーザー名 <span className="text-red-400">*</span>
+            </label>
+            <input type="email" placeholder="admin@yourorg.com" value={username}
+              onChange={(e) => setUsername(e.target.value)} disabled={loading} className="input" />
           </div>
 
           {/* パスワード */}
           <div>
-            <label className="block text-xs font-semibold text-neutral-600 mb-1">パスワード</label>
-            <input type="password" placeholder="••••••••" className="input" />
+            <label className="block text-xs font-semibold text-neutral-600 mb-1">
+              パスワード <span className="text-red-400">*</span>
+            </label>
+            <input type="password" placeholder="••••••••" value={password}
+              onChange={(e) => setPassword(e.target.value)} disabled={loading} className="input" />
           </div>
 
           {/* セキュリティトークン */}
@@ -124,7 +185,7 @@ function ConnectOrgModal({ onClose }: { onClose: () => void }) {
               セキュリティトークン
               <span className="text-neutral-400 font-normal ml-1">（APIアクセスに必要）</span>
             </label>
-            <input type="password" placeholder="abcXYZ123..." className="input" />
+            <input type="password" placeholder="abcXYZ123..." disabled={loading} className="input" />
             <p className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
               Salesforce 右上アイコン → 設定 → 個人設定 → セキュリティトークンのリセット → メールで届いたトークンを入力
             </p>
@@ -137,10 +198,7 @@ function ConnectOrgModal({ onClose }: { onClose: () => void }) {
               className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-neutral-50 transition-colors"
             >
               <span className="text-xs font-semibold text-neutral-600">詳細設定（Connected App / JWT）</span>
-              <ChevronDown
-                size={15}
-                className={`text-neutral-400 transition-transform duration-200 ${showAdvanced ? "rotate-180" : ""}`}
-              />
+              <ChevronDown size={15} className={`text-neutral-400 transition-transform duration-200 ${showAdvanced ? "rotate-180" : ""}`} />
             </button>
             {showAdvanced && (
               <div className="px-4 pb-4 space-y-3 border-t border-neutral-100">
@@ -155,7 +213,7 @@ function ConnectOrgModal({ onClose }: { onClose: () => void }) {
                 ].map(({ label, placeholder, type }) => (
                   <div key={label}>
                     <label className="block text-[11px] font-semibold text-neutral-600 mb-1">{label}</label>
-                    <input type={type} placeholder={placeholder} className="input text-xs" />
+                    <input type={type} placeholder={placeholder} disabled={loading} className="input text-xs" />
                   </div>
                 ))}
               </div>
@@ -165,10 +223,17 @@ function ConnectOrgModal({ onClose }: { onClose: () => void }) {
 
         {/* フッタ */}
         <div className="px-5 py-4 border-t border-neutral-100 flex items-center justify-between gap-3 flex-shrink-0">
-          <button onClick={onClose} className="btn-ghost text-sm">キャンセル</button>
-          <button className="btn-primary text-sm">
-            <CheckCircle2 size={14} />
-            接続テスト & 追加
+          <button onClick={onClose} disabled={loading} className="btn-ghost text-sm">キャンセル</button>
+          <button
+            onClick={handleTest}
+            disabled={loading || !username.trim() || !password.trim()}
+            className="btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {phase === "test_loading" ? (
+              <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" />テスト中...</>
+            ) : (
+              <><CheckCircle2 size={14} />接続テスト & 追加</>
+            )}
           </button>
         </div>
       </div>
