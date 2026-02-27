@@ -167,11 +167,11 @@ export default function SpecGeneratorPage() {
         {/* ── ステップインジケーター ── */}
         <div className="flex items-center gap-2 text-xs">
           {(["ファイルアップロード", "要件解析", "設定生成"] as const).map((step, i) => {
-            const stepStage: Stage[] = [
+            const stepStage = ([
               ["idle", "uploaded"],
               ["analyzing", "analyzed"],
               ["generating", "done"],
-            ][i];
+            ][i]) as Stage[];
             const active = stepStage.includes(stage);
             const done =
               (i === 0 && ["analyzing","analyzed","generating","done"].includes(stage)) ||

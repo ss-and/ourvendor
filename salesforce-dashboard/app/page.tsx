@@ -16,7 +16,7 @@ import { ORGS } from "@/lib/orgs";
 const FEATURES = [
   { href: "/chat",            icon: MessageSquare, label: "チャット自動化",    desc: "日本語でSalesforceを設定変更",           badge: "NEW",     badgeCls: "bg-primary-500 text-white" },
   { href: "/industry-packs",  icon: Package,       label: "業界パック",        desc: "業界別CRM設定を一括展開",                badge: "NEW",     badgeCls: "bg-primary-500 text-white" },
-  { href: "/presets",         icon: Bookmark,      label: "プリセット管理",    desc: "よく使う設定をテンプレート化",            badge: undefined, badgeCls: "" },
+  { href: "/presets",         icon: Bookmark,      label: "パワーアクション",  desc: "Lightningページ一括編集・数式自動生成・重複マージ", badge: undefined, badgeCls: "" },
   { href: "/history",         icon: History,       label: "実行履歴",          desc: "操作ログを確認・追跡",                   badge: undefined, badgeCls: "" },
   { href: "/spec-generator",  icon: FileText,      label: "仕様書から自動生成", desc: "業務フロー・要件書を読み込んで一括構築",  badge: "Phase 3", badgeCls: "bg-amber-500 text-white" },
 ];

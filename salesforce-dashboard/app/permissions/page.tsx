@@ -3,9 +3,13 @@
 import { useState } from "react";
 import {
   Shield, Users, Lock, Check, X, Search,
-  Plus, ChevronRight, AlertTriangle, Eye,
+  Plus, ChevronRight, AlertTriangle, Eye, Loader2, CheckCircle2,
 } from "lucide-react";
 import Header from "@/components/layout/Header";
+
+// ── 型 ──────────────────────────────────────────────────
+
+type PSItem = { id: string; name: string; assigned: number; description: string; modified: string };
 
 // ── 型 & モックデータ ─────────────────────────────────────
 
@@ -86,38 +90,197 @@ function ProfilesTab() {
   );
 }
 
-function PermSetsTab() {
+// ── 権限セット作成モーダル ────────────────────────────────
+
+function NewPermSetModal({ onClose, onCreated }: { onClose: () => void; onCreated: (ps: PSItem) => void }) {
+  const [name, setName]         = useState("");
+  const [desc, setDesc]         = useState("");
+  const [apiAccess, setApiAccess] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [done, setDone]         = useState(false);
+
+  const handleCreate = async () => {
+    if (!name.trim()) return;
+    setCreating(true);
+    await new Promise((r) => setTimeout(r, 1000));
+    onCreated({ id: `ps${Date.now()}`, name: name.trim(), assigned: 0, description: desc.trim() || "（説明なし）", modified: "2026/02/27" });
+    setCreating(false);
+    setDone(true);
+    setTimeout(onClose, 1100);
+  };
+
   return (
-    <div className="space-y-3">
-      <div className="flex justify-end">
-        <button className="btn-primary">
-          <Plus size={14} />
-          権限セットを作成
-        </button>
-      </div>
-      <div className="grid grid-cols-1 gap-3">
-        {PERMISSION_SETS.map((ps) => (
-          <div key={ps.id} className="card p-4 flex items-start gap-3 hover:border-primary-300 transition-colors">
-            <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <Lock size={16} className="text-emerald-600" />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in"
+      onClick={(e) => { if (e.target === e.currentTarget && !creating) onClose(); }}
+    >
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-modal mx-4 animate-slide-up overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+              <Lock size={15} className="text-emerald-600" />
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <p className="text-sm font-bold text-neutral-800">{ps.name}</p>
-                <span className="text-[10px] bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded-full">
-                  {ps.assigned} 名に割り当て
-                </span>
-              </div>
-              <p className="text-xs text-neutral-500">{ps.description}</p>
-              <p className="text-[11px] text-neutral-400 mt-1">最終更新: {ps.modified}</p>
+            <div>
+              <h2 className="font-bold text-neutral-900 text-sm">権限セットを作成</h2>
+              <p className="text-[11px] text-neutral-400">新しい権限セットを Salesforce に追加</p>
             </div>
-            <button className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-semibold flex-shrink-0 mt-1">
-              編集 <ChevronRight size={12} />
-            </button>
           </div>
-        ))}
+          {!creating && <button onClick={onClose} className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100 transition-colors"><X size={16} /></button>}
+        </div>
+
+        {done ? (
+          <div className="flex flex-col items-center py-10 gap-3">
+            <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center">
+              <CheckCircle2 size={28} className="text-emerald-500" />
+            </div>
+            <p className="text-sm font-bold text-neutral-800">権限セットを作成しました</p>
+          </div>
+        ) : (
+          <div className="p-5 space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-neutral-600 mb-1">権限セット名 <span className="text-red-400">*</span></label>
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="例: 営業部マネージャー権限" className="input" disabled={creating} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-neutral-600 mb-1">説明</label>
+              <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="この権限セットの目的・付与する権限を記載" className="input resize-none h-16 text-sm" disabled={creating} />
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={apiAccess} onChange={(e) => setApiAccess(e.target.checked)} disabled={creating} className="w-4 h-4 rounded border-neutral-300 text-primary-500" />
+              <span className="text-xs font-semibold text-neutral-600">API アクセスを許可</span>
+            </label>
+            <div className="flex justify-end gap-2 pt-1">
+              <button onClick={onClose} disabled={creating} className="btn-ghost text-sm">キャンセル</button>
+              <button onClick={handleCreate} disabled={!name.trim() || creating} className="btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                {creating ? <><Loader2 size={13} className="animate-spin" />作成中...</> : <><Plus size={13} />権限セットを作成</>}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+// ── 権限セット編集モーダル ────────────────────────────────
+
+function EditPermSetModal({ item, onClose }: { item: PSItem; onClose: () => void }) {
+  const [name, setName]   = useState(item.name);
+  const [desc, setDesc]   = useState(item.description);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved]   = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    await new Promise((r) => setTimeout(r, 900));
+    setSaving(false);
+    setSaved(true);
+    setTimeout(onClose, 1000);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in"
+      onClick={(e) => { if (e.target === e.currentTarget && !saving) onClose(); }}
+    >
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-modal mx-4 animate-slide-up overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+              <Lock size={15} className="text-emerald-600" />
+            </div>
+            <div>
+              <h2 className="font-bold text-neutral-900 text-sm">権限セットを編集</h2>
+              <p className="text-[11px] text-neutral-400">{item.name}</p>
+            </div>
+          </div>
+          {!saving && <button onClick={onClose} className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100 transition-colors"><X size={16} /></button>}
+        </div>
+        {saved ? (
+          <div className="flex flex-col items-center py-10 gap-3">
+            <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center">
+              <CheckCircle2 size={28} className="text-emerald-500" />
+            </div>
+            <p className="text-sm font-bold text-neutral-800">保存しました</p>
+          </div>
+        ) : (
+          <div className="p-5 space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-neutral-600 mb-1">権限セット名</label>
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input" disabled={saving} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-neutral-600 mb-1">説明</label>
+              <textarea value={desc} onChange={(e) => setDesc(e.target.value)} className="input resize-none h-16 text-sm" disabled={saving} />
+            </div>
+            <div className="text-xs text-neutral-500 bg-neutral-50 rounded-lg p-3">
+              割り当て済みユーザー: <span className="font-bold text-neutral-700">{item.assigned} 名</span>
+              <span className="ml-3">最終更新: {item.modified}</span>
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <button onClick={onClose} disabled={saving} className="btn-ghost text-sm">キャンセル</button>
+              <button onClick={handleSave} disabled={saving} className="btn-primary text-sm disabled:opacity-50">
+                {saving ? <><Loader2 size={13} className="animate-spin" />保存中...</> : <><CheckCircle2 size={13} />保存</>}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── PermSetsTab ──────────────────────────────────────────
+
+function PermSetsTab() {
+  const [permSets, setPermSets]     = useState(PERMISSION_SETS);
+  const [showCreate, setShowCreate] = useState(false);
+  const [editTarget, setEditTarget] = useState<PSItem | null>(null);
+
+  return (
+    <>
+      <div className="space-y-3">
+        <div className="flex justify-end">
+          <button onClick={() => setShowCreate(true)} className="btn-primary">
+            <Plus size={14} />
+            権限セットを作成
+          </button>
+        </div>
+        <div className="grid grid-cols-1 gap-3">
+          {permSets.map((ps) => (
+            <div key={ps.id} className="card p-4 flex items-start gap-3 hover:border-primary-300 transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Lock size={16} className="text-emerald-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <p className="text-sm font-bold text-neutral-800">{ps.name}</p>
+                  <span className="text-[10px] bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded-full">
+                    {ps.assigned} 名に割り当て
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-500">{ps.description}</p>
+                <p className="text-[11px] text-neutral-400 mt-1">最終更新: {ps.modified}</p>
+              </div>
+              <button
+                onClick={() => setEditTarget(ps)}
+                className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-semibold flex-shrink-0 mt-1"
+              >
+                編集 <ChevronRight size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {showCreate && (
+        <NewPermSetModal
+          onClose={() => setShowCreate(false)}
+          onCreated={(ps) => setPermSets((prev) => [ps, ...prev])}
+        />
+      )}
+      {editTarget && <EditPermSetModal item={editTarget} onClose={() => setEditTarget(null)} />}
+    </>
   );
 }
 
