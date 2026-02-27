@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  MessageSquare, Package, Bookmark, History,
+  MessageSquare, Package, Bookmark, History, FileText,
   ArrowRight, Plus, Users, Clock, CheckCircle2,
   X, ChevronDown, Server, ExternalLink,
 } from "lucide-react";
@@ -14,10 +14,11 @@ import { ORGS } from "@/lib/orgs";
 // ── 利用可能な機能 ──────────────────────────────────────
 
 const FEATURES = [
-  { href: "/chat",           icon: MessageSquare, label: "チャット自動化",  desc: "日本語でSalesforceを設定変更",      badge: "NEW" },
-  { href: "/industry-packs", icon: Package,       label: "業界パック",      desc: "業界別CRM設定を一括展開",           badge: "NEW" },
-  { href: "/presets",        icon: Bookmark,      label: "プリセット管理",  desc: "よく使う設定をテンプレート化",       badge: undefined },
-  { href: "/history",        icon: History,       label: "実行履歴",        desc: "操作ログを確認・追跡",              badge: undefined },
+  { href: "/chat",            icon: MessageSquare, label: "チャット自動化",    desc: "日本語でSalesforceを設定変更",           badge: "NEW",     badgeCls: "bg-primary-500 text-white" },
+  { href: "/industry-packs",  icon: Package,       label: "業界パック",        desc: "業界別CRM設定を一括展開",                badge: "NEW",     badgeCls: "bg-primary-500 text-white" },
+  { href: "/presets",         icon: Bookmark,      label: "プリセット管理",    desc: "よく使う設定をテンプレート化",            badge: undefined, badgeCls: "" },
+  { href: "/history",         icon: History,       label: "実行履歴",          desc: "操作ログを確認・追跡",                   badge: undefined, badgeCls: "" },
+  { href: "/spec-generator",  icon: FileText,      label: "仕様書から自動生成", desc: "業務フロー・要件書を読み込んで一括構築",  badge: "Phase 3", badgeCls: "bg-amber-500 text-white" },
 ];
 
 // ── 新しい組織を接続モーダル ────────────────────────────
@@ -202,10 +203,13 @@ export default function HomePage() {
           {ORGS.map((org) => {
             const isSelected = selectedOrg.id === org.id;
             return (
-              <button
+              <div
                 key={org.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => selectOrg(org.id)}
-                className={`card p-4 text-left transition-all duration-150 ${
+                onKeyDown={(e) => e.key === "Enter" && selectOrg(org.id)}
+                className={`card p-4 text-left transition-all duration-150 cursor-pointer ${
                   isSelected
                     ? `${org.borderActive} ${org.bgActive} shadow-md ring-1 ${org.ringColor}`
                     : "hover:border-neutral-300 hover:shadow-sm"
@@ -221,23 +225,40 @@ export default function HomePage() {
                   </span>
                 </div>
                 <p className="text-xs text-neutral-400 truncate ml-4">{org.domain}</p>
-                <div className="flex items-center gap-3 mt-2.5 ml-4">
-                  <span className="flex items-center gap-1 text-xs text-neutral-400">
-                    <Clock size={11} />
-                    {org.lastUsed}
-                  </span>
-                  <span className="flex items-center gap-1 text-xs text-neutral-400">
-                    <Users size={11} />
-                    {org.userCount} 名
-                  </span>
+                <div className="flex items-center justify-between mt-2.5 ml-4">
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center gap-1 text-xs text-neutral-400">
+                      <Clock size={11} />
+                      {org.lastUsed}
+                    </span>
+                    <span className="flex items-center gap-1 text-xs text-neutral-400">
+                      <Users size={11} />
+                      {org.userCount} 名
+                    </span>
+                  </div>
+                  {/* Salesforce で開くボタン */}
+                  <a
+                    href={`https://${org.domain}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className={`flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-lg transition-colors ${
+                      isSelected
+                        ? `${org.textActive} hover:bg-white/60`
+                        : "text-neutral-400 hover:text-primary-600 hover:bg-primary-50"
+                    }`}
+                  >
+                    <ExternalLink size={11} />
+                    SF で開く
+                  </a>
                 </div>
                 {isSelected && (
-                  <div className={`flex items-center gap-1 mt-2.5 ml-4 text-xs font-semibold ${org.textActive}`}>
+                  <div className={`flex items-center gap-1 mt-2 ml-0 text-xs font-semibold ${org.textActive}`}>
                     <CheckCircle2 size={12} />
                     選択中
                   </div>
                 )}
-              </button>
+              </div>
             );
           })}
 
@@ -278,7 +299,7 @@ export default function HomePage() {
 
         {/* ━━━ ④ 機能ショートカット ━━━ */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {FEATURES.map(({ href, icon: Icon, label, desc, badge }) => (
+          {FEATURES.map(({ href, icon: Icon, label, desc, badge, badgeCls }) => (
             <Link
               key={href}
               href={href}
@@ -291,7 +312,7 @@ export default function HomePage() {
                 <div className="flex items-center gap-2">
                   <p className="font-semibold text-neutral-800 text-sm">{label}</p>
                   {badge && (
-                    <span className="text-[9px] font-bold bg-primary-500 text-white px-1.5 py-0.5 rounded-full">
+                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${badgeCls}`}>
                       {badge}
                     </span>
                   )}

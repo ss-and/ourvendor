@@ -4,7 +4,7 @@ import { useState } from "react";
 import Header from "@/components/layout/Header";
 import {
   User, CreditCard, Zap, BarChart3, Crown,
-  Download, Shield, Check, AlertCircle,
+  Download, Shield, Check, AlertCircle, Sparkles, Key, Lock,
 } from "lucide-react";
 
 // ── 型 ──────────────────────────────────────────────────
@@ -310,6 +310,8 @@ function BillingTab() {
 function AITab() {
   const [dryRun, setDryRun] = useState(false);
   const [confidence, setConfidence] = useState(70);
+  const [byolEnabled, setByolEnabled] = useState(false);
+  const [byolModel, setByolModel] = useState("anthropic");
 
   return (
     <div className="space-y-6">
@@ -364,16 +366,121 @@ function AITab() {
           </div>
         </div>
 
-        {/* Anthropic API Key */}
-        <div>
-          <label className="block text-xs font-semibold text-neutral-600 mb-1">
-            Anthropic API Key
-            <span className="text-neutral-400 font-normal ml-1">（独自キーを使用する場合）</span>
-          </label>
-          <input type="password" placeholder="sk-ant-..." className="input" />
-          <p className="text-[11px] text-neutral-400 mt-1.5">
-            未入力の場合はサービス側のキーが使用されます（Pro プランに含まれます）
-          </p>
+        {/* ── AI モデル設定 ─────────────────────────────── */}
+        <div className="space-y-3 pt-1">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-neutral-800">AI モデル</p>
+            {byolEnabled && (
+              <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                BYOL 有効
+              </span>
+            )}
+          </div>
+
+          {/* 無料プラン（デフォルト） */}
+          <div className={`flex items-center justify-between p-3.5 rounded-xl border transition-colors ${byolEnabled ? "bg-neutral-50 border-neutral-200 opacity-50" : "bg-blue-50 border-blue-200"}`}>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <Sparkles size={15} className="text-blue-500" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-neutral-800">Gemini Flash 2.0</p>
+                <p className="text-[11px] text-neutral-500">無料プラン · ourvendor 提供</p>
+              </div>
+            </div>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${byolEnabled ? "bg-neutral-100 text-neutral-400" : "bg-emerald-100 text-emerald-700"}`}>
+              {byolEnabled ? "未使用" : "使用中"}
+            </span>
+          </div>
+
+          {/* BYOL トグル */}
+          <div className={`rounded-xl border-2 transition-all ${byolEnabled ? "border-amber-300 bg-amber-50" : "border-dashed border-neutral-200"}`}>
+            <button
+              type="button"
+              onClick={() => setByolEnabled(!byolEnabled)}
+              className="w-full flex items-center justify-between p-4 text-left"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${byolEnabled ? "bg-amber-200" : "bg-neutral-100"}`}>
+                  <Key size={14} className={byolEnabled ? "text-amber-600" : "text-neutral-400"} />
+                </div>
+                <div>
+                  <p className={`text-sm font-bold ${byolEnabled ? "text-amber-800" : "text-neutral-600"}`}>
+                    BYOL — 独自 API キーで接続
+                  </p>
+                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                    高品質モデルに切り替えて高度な機能を解放
+                  </p>
+                </div>
+              </div>
+              <div className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${byolEnabled ? "bg-amber-400" : "bg-neutral-200"}`}>
+                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${byolEnabled ? "translate-x-6" : "translate-x-1"}`} />
+              </div>
+            </button>
+
+            {byolEnabled && (
+              <div className="px-4 pb-4 space-y-4 border-t border-amber-200">
+                {/* 解放される機能 */}
+                <div className="pt-3">
+                  <p className="text-[11px] font-bold text-amber-700 mb-2 uppercase tracking-wide">
+                    解放される機能
+                  </p>
+                  <div className="space-y-1.5">
+                    {[
+                      "Phase 3: 仕様書・業務フローから自動生成",
+                      "高精度な自然言語処理（128k トークン対応）",
+                      "複雑な要件解析と多段階タスク実行",
+                    ].map((f) => (
+                      <div key={f} className="flex items-center gap-1.5 text-xs text-amber-700">
+                        <Sparkles size={11} className="text-amber-500 flex-shrink-0" />
+                        {f}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* プロバイダー選択 */}
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-600 mb-1">
+                    AI プロバイダー
+                  </label>
+                  <select
+                    value={byolModel}
+                    onChange={(e) => setByolModel(e.target.value)}
+                    className="input text-xs"
+                  >
+                    <option value="anthropic">Anthropic Claude (claude-sonnet-4-6)</option>
+                    <option value="openai">OpenAI GPT-4o</option>
+                    <option value="gemini">Google Gemini Pro 1.5</option>
+                  </select>
+                </div>
+
+                {/* API キー */}
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-600 mb-1">
+                    API キー
+                    <span className="ml-1 text-neutral-400 font-normal">
+                      {byolModel === "anthropic" ? "（sk-ant-...）" : byolModel === "openai" ? "（sk-...）" : "（AIza...）"}
+                    </span>
+                  </label>
+                  <div className="relative">
+                    <Lock size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+                    <input
+                      type="password"
+                      placeholder={
+                        byolModel === "anthropic" ? "sk-ant-..." :
+                        byolModel === "openai"    ? "sk-..."     : "AIza..."
+                      }
+                      className="input pl-8 text-xs"
+                    />
+                  </div>
+                  <p className="text-[11px] text-neutral-400 mt-1">
+                    キーはサーバーに保存されず、セッション中のみ使用されます
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex justify-end pt-1">
