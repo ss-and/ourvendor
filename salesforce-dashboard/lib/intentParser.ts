@@ -182,7 +182,7 @@ interface RawIntentOutput {
 
 // ── 変換: Raw → ParsedIntentPreview ─────────────────────────────────────────
 
-function buildPreview(raw: RawIntentOutput): ParsedIntentPreview {
+function buildPreview(raw: RawIntentOutput): ParsedIntentPreview & { _raw: RawIntentOutput } {
   const { action, confidence, reasoning, parameters } = raw;
   const warnings: string[] = [];
 
